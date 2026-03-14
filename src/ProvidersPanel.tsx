@@ -22,7 +22,6 @@ interface ProviderConfig {
 
 interface ModelConfig {
   id: string;
-  display_name: string;
   provider_id: string;
   is_default: boolean;
 }
@@ -110,13 +109,11 @@ const BLANK_PROVIDER_FORM: ProviderForm = {
 
 interface ModelForm {
   id: string;
-  display_name: string;
   is_default: boolean;
 }
 
 const BLANK_MODEL_FORM: ModelForm = {
   id: "",
-  display_name: "",
   is_default: false,
 };
 
@@ -149,6 +146,24 @@ export default function ProvidersPanel() {
     useState<ProviderForm>(BLANK_PROVIDER_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // ── Edit provider ──────────────────────────────────────────────────────────
+  const [editingProvider, setEditingProvider] = useState<string | null>(null);
+  const [editProviderForm, setEditProviderForm] =
+    useState<ProviderForm>(BLANK_PROVIDER_FORM);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+
+  // ── Confirm modal ──────────────────────────────────────────────────────────
+  interface ConfirmPending {
+    type: "provider" | "model";
+    providerId: string;
+    modelId?: string;
+    label: string;
+  }
+  const [confirmPending, setConfirmPending] = useState<ConfirmPending | null>(
+    null,
+  );
 
   // ── Load providers ──────────────────────────────────────────────────────────
 
@@ -270,10 +285,18 @@ export default function ProvidersPanel() {
 
   // ── Delete provider ─────────────────────────────────────────────────────────
 
-  const handleDeleteProvider = async (providerId: string) => {
+  const handleDeleteProvider = (providerId: string) => {
+    const p = providers.find((p) => p.id === providerId);
+    setConfirmPending({
+      type: "provider",
+      providerId,
+      label: `Delete provider "${p?.display_name ?? providerId}"?`,
+    });
+  };
+
+  const _doDeleteProvider = async (providerId: string) => {
     try {
       await invoke("delete_provider", { providerId });
-      // Clear default if it pointed to this provider
       if (defaultSelection?.provider_id === providerId) {
         await invoke("clear_default_provider_model");
         setDefaultSelection(null);
@@ -314,11 +337,10 @@ export default function ProvidersPanel() {
 
   const handleAddModel = async (providerId: string) => {
     const form = addModelForms[providerId] ?? BLANK_MODEL_FORM;
-    if (!form.id.trim() || !form.display_name.trim()) return;
+    if (!form.id.trim()) return;
     const existing = models[providerId] ?? [];
     const newModel: ModelConfig = {
       id: form.id.trim(),
-      display_name: form.display_name.trim(),
       provider_id: providerId,
       is_default: form.is_default,
     };
@@ -345,7 +367,16 @@ export default function ProvidersPanel() {
 
   // ── Delete model ────────────────────────────────────────────────────────────
 
-  const handleDeleteModel = async (providerId: string, modelId: string) => {
+  const handleDeleteModel = (providerId: string, modelId: string) => {
+    setConfirmPending({
+      type: "model",
+      providerId,
+      modelId,
+      label: `Remove model "${modelId}"?`,
+    });
+  };
+
+  const _doDeleteModel = async (providerId: string, modelId: string) => {
     const existing = models[providerId] ?? [];
     const updated = existing.filter((m) => m.id !== modelId);
     try {
@@ -356,6 +387,49 @@ export default function ProvidersPanel() {
       setModels((prev) => ({ ...prev, [providerId]: updated }));
     } catch (e) {
       setModelErrors((prev) => ({ ...prev, [providerId]: String(e) }));
+    }
+  };
+
+  // ── Confirm delete ──────────────────────────────────────────────────────────
+
+  const handleConfirmDelete = async () => {
+    if (!confirmPending) return;
+    setConfirmPending(null);
+    if (confirmPending.type === "provider") {
+      await _doDeleteProvider(confirmPending.providerId);
+    } else if (confirmPending.type === "model" && confirmPending.modelId) {
+      await _doDeleteModel(confirmPending.providerId, confirmPending.modelId);
+    }
+  };
+
+  // ── Save edit provider ──────────────────────────────────────────────────────
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditFormError(null);
+    if (!editProviderForm.display_name.trim()) {
+      setEditFormError("Display name is required.");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const provider: ProviderConfig = {
+        id: editProviderForm.id,
+        display_name: editProviderForm.display_name.trim(),
+        base_url: editProviderForm.base_url.trim(),
+        provider_type: editProviderForm.provider_type,
+        is_cloud: editProviderForm.is_cloud,
+      };
+      await invoke("add_provider", {
+        provider,
+        apiKey: editProviderForm.api_key,
+      });
+      setEditingProvider(null);
+      await loadProviders();
+    } catch (e) {
+      setEditFormError(String(e));
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -487,93 +561,199 @@ export default function ProvidersPanel() {
             <div key={p.id} className="provider-card">
               {/* ── Left: provider info ── */}
               <div className="provider-card-left">
-                <div className="provider-card-title">
-                  <span
-                    className="provider-type-badge"
-                    style={{ background: TYPE_COLORS[p.provider_type] }}
+                {editingProvider === p.id ? (
+                  <form
+                    className="edit-provider-form"
+                    onSubmit={handleSaveEdit}
                   >
-                    {p.provider_type}
-                  </span>
-                  <span className="provider-name">{p.display_name}</span>
-                </div>
+                    <div className="provider-card-title">
+                      <span
+                        className="provider-type-badge"
+                        style={{ background: TYPE_COLORS[p.provider_type] }}
+                      >
+                        {p.provider_type}
+                      </span>
+                      <span className="provider-name">{p.id}</span>
+                    </div>
+                    <div className="form-row">
+                      <label>Display Name</label>
+                      <input
+                        type="text"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={editProviderForm.display_name}
+                        onChange={(e) =>
+                          setEditProviderForm((prev) => ({
+                            ...prev,
+                            display_name: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label>Base URL</label>
+                      <input
+                        type="text"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={editProviderForm.base_url}
+                        onChange={(e) =>
+                          setEditProviderForm((prev) => ({
+                            ...prev,
+                            base_url: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="form-row">
+                      <label>API Key</label>
+                      <input
+                        type="password"
+                        placeholder="Leave blank to keep current"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={editProviderForm.api_key}
+                        onChange={(e) =>
+                          setEditProviderForm((prev) => ({
+                            ...prev,
+                            api_key: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    {editFormError && (
+                      <div className="form-error">{editFormError}</div>
+                    )}
+                    <div className="card-actions">
+                      <button
+                        type="submit"
+                        className="btn-primary-sm"
+                        disabled={editSaving}
+                      >
+                        {editSaving ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-sm"
+                        onClick={() => setEditingProvider(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <div className="provider-card-title">
+                      <span
+                        className="provider-type-badge"
+                        style={{ background: TYPE_COLORS[p.provider_type] }}
+                      >
+                        {p.provider_type}
+                      </span>
+                      <span className="provider-name">{p.display_name}</span>
+                    </div>
 
-                <div className="provider-url">{p.base_url}</div>
+                    <div className="provider-url">{p.base_url}</div>
 
-                <span className="provider-cloud-badge">
-                  {p.is_cloud ? "☁ Cloud" : "⬡ Local"}
-                </span>
+                    <span className="provider-cloud-badge">
+                      {p.is_cloud ? "☁ Cloud" : "⬡ Local"}
+                    </span>
 
-                <div className="provider-key-row">
-                  <span
-                    className={`key-status ${
-                      keyOk === true
-                        ? "key-ok"
-                        : keyOk === false
-                          ? "key-missing"
-                          : "key-unknown"
-                    }`}
-                  >
-                    {keyOk === true
-                      ? "✓ API key set"
-                      : keyOk === false
-                        ? "✗ No API key"
-                        : "· · ·"}
-                  </span>
-                  <button
-                    className="btn-sm"
-                    onClick={() =>
-                      setShowApiKeyInput((prev) => ({
-                        ...prev,
-                        [p.id]: !prev[p.id],
-                      }))
-                    }
-                  >
-                    {showKeyInput ? "Cancel" : "Update Key"}
-                  </button>
-                </div>
+                    <div className="provider-key-row">
+                      <span
+                        className={`key-status ${
+                          keyOk === true
+                            ? "key-ok"
+                            : keyOk === false
+                              ? "key-missing"
+                              : "key-unknown"
+                        }`}
+                      >
+                        {keyOk === true
+                          ? "✓ API key set"
+                          : keyOk === false
+                            ? "✗ No API key"
+                            : "· · ·"}
+                      </span>
+                      <button
+                        className="btn-sm"
+                        onClick={() =>
+                          setShowApiKeyInput((prev) => ({
+                            ...prev,
+                            [p.id]: !prev[p.id],
+                          }))
+                        }
+                      >
+                        {showKeyInput ? "Cancel" : "Update Key"}
+                      </button>
+                    </div>
 
-                {showKeyInput && (
-                  <div className="api-key-update-row">
-                    <input
-                      type="password"
-                      className="api-key-input"
-                      placeholder="New API key…"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      value={apiKeyInputs[p.id] ?? ""}
-                      onChange={(e) =>
-                        setApiKeyInputs((prev) => ({
-                          ...prev,
-                          [p.id]: e.target.value,
-                        }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleUpdateApiKey(p.id);
-                      }}
-                    />
-                    <button
-                      className="btn-primary-sm"
-                      onClick={() => handleUpdateApiKey(p.id)}
-                    >
-                      Save
-                    </button>
-                  </div>
+                    {showKeyInput && (
+                      <div className="api-key-update-row">
+                        <input
+                          type="password"
+                          className="api-key-input"
+                          placeholder="New API key…"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          value={apiKeyInputs[p.id] ?? ""}
+                          onChange={(e) =>
+                            setApiKeyInputs((prev) => ({
+                              ...prev,
+                              [p.id]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleUpdateApiKey(p.id);
+                          }}
+                        />
+                        <button
+                          className="btn-primary-sm"
+                          onClick={() => handleUpdateApiKey(p.id)}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                    {apiKeyErrors[p.id] && (
+                      <div className="form-error">{apiKeyErrors[p.id]}</div>
+                    )}
+                    {apiKeySaved[p.id] && (
+                      <div className="key-saved-msg">✓ Key saved</div>
+                    )}
+
+                    <div className="card-actions">
+                      <button
+                        className="btn-sm"
+                        onClick={() => {
+                          setEditingProvider(p.id);
+                          setEditProviderForm({
+                            id: p.id,
+                            display_name: p.display_name,
+                            provider_type: p.provider_type,
+                            base_url: p.base_url,
+                            is_cloud: p.is_cloud,
+                            api_key: "",
+                          });
+                          setEditFormError(null);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-danger-sm"
+                        onClick={() => handleDeleteProvider(p.id)}
+                        title="Delete provider"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
                 )}
-                {apiKeyErrors[p.id] && (
-                  <div className="form-error">{apiKeyErrors[p.id]}</div>
-                )}
-                {apiKeySaved[p.id] && (
-                  <div className="key-saved-msg">✓ Key saved</div>
-                )}
-
-                <button
-                  className="btn-danger-sm card-delete-btn"
-                  onClick={() => handleDeleteProvider(p.id)}
-                  title="Delete provider"
-                >
-                  Delete
-                </button>
               </div>
 
               {/* ── Right: models ── */}
@@ -605,7 +785,6 @@ export default function ProvidersPanel() {
                         />
                       </div>
                       <div className="model-info">
-                        <span className="model-name">{m.display_name}</span>
                         <span className="model-id">{m.id}</span>
                       </div>
                       <button
@@ -650,23 +829,6 @@ export default function ProvidersPanel() {
                         }))
                       }
                     />
-                    <input
-                      type="text"
-                      placeholder="Display name (e.g. GPT-4o)"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      value={addModelForms[p.id]?.display_name ?? ""}
-                      onChange={(e) =>
-                        setAddModelForms((prev) => ({
-                          ...prev,
-                          [p.id]: {
-                            ...(prev[p.id] ?? BLANK_MODEL_FORM),
-                            display_name: e.target.value,
-                          },
-                        }))
-                      }
-                    />
                     <div className="add-model-actions">
                       <button
                         className="btn-primary-sm"
@@ -696,6 +858,26 @@ export default function ProvidersPanel() {
           );
         })}
       </div>
+
+      {/* Confirm delete modal */}
+      {confirmPending && (
+        <div className="confirm-overlay">
+          <div className="confirm-dialog">
+            <p>{confirmPending.label}</p>
+            <div className="confirm-actions">
+              <button className="btn-danger-sm" onClick={handleConfirmDelete}>
+                Delete
+              </button>
+              <button
+                className="btn-sm"
+                onClick={() => setConfirmPending(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

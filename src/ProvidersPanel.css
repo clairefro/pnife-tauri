@@ -508,3 +508,84 @@
   border-color: transparent;
   background: rgba(224, 108, 117, 0.1);
 }
+
+/* ── Card actions row (Edit + Delete) ────────────────────────── */
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+/* ── Confirm delete modal ────────────────────────────────────── */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: #1c1d24;
+  border: 1px solid #33343a;
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  min-width: 260px;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.confirm-dialog p {
+  margin: 0 0 1.1rem;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+/* ── Edit provider inline form ───────────────────────────────── */
+
+.edit-provider-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.edit-provider-form .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.edit-provider-form .form-row label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.edit-provider-form .form-row input {
+  background: #16171e;
+  border: 1px solid #33343a;
+  border-radius: 5px;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  padding: 0.32em 0.55em;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-provider-form .form-row input:focus {
+  border-color: #555;
+}
