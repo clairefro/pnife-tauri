@@ -884,7 +884,7 @@ export default function ProvidersPanel() {
                       <input
                         type="text"
                         list={`model-suggestions-${p.id}`}
-                        placeholder="Model ID (e.g. gpt-4o)"
+                        placeholder="Custom or click to view suggested"
                         autoCapitalize="none"
                         autoCorrect="off"
                         spellCheck={false}
