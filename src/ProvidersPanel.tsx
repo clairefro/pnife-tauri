@@ -78,6 +78,43 @@ const CLOUD_DEFAULT: Record<ProviderType, boolean> = {
   Custom: false,
 };
 
+// Well-known model IDs for cloud providers shown as datalist suggestions.
+// LMStudio / Ollama are empty here — models are fetched live from the server.
+const KNOWN_MODELS: Record<ProviderType, string[]> = {
+  OpenAI: [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "o1",
+    "o1-mini",
+    "o3",
+    "o3-mini",
+    "gpt-4-turbo",
+    "gpt-4",
+    "gpt-3.5-turbo",
+  ],
+  Anthropic: [
+    "claude-opus-4-5",
+    "claude-sonnet-4-5",
+    "claude-haiku-3-5",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229",
+  ],
+  Google: [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-pro-exp",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash",
+  ],
+  LMStudio: [],
+  Ollama: [],
+  Custom: [],
+};
+
+const LOCAL_PROVIDER_TYPES: ProviderType[] = ["LMStudio", "Ollama"];
+
 const TYPE_COLORS: Record<ProviderType, string> = {
   OpenAI: "#10a37f",
   Anthropic: "#c96442",
@@ -140,6 +177,15 @@ export default function ProvidersPanel() {
     Record<string, boolean>
   >({});
   const [modelErrors, setModelErrors] = useState<Record<string, string>>({});
+
+  // ── Fetched local model lists (LMStudio / Ollama) ─────────────────────────
+  const [localModels, setLocalModels] = useState<Record<string, string[]>>({});
+  const [fetchingLocalModels, setFetchingLocalModels] = useState<
+    Record<string, boolean>
+  >({});
+  const [localModelFetchError, setLocalModelFetchError] = useState<
+    Record<string, string>
+  >({});
 
   const [showAddProvider, setShowAddProvider] = useState(false);
   const [providerForm, setProviderForm] =
@@ -330,6 +376,21 @@ export default function ProvidersPanel() {
       );
     } catch (e) {
       setApiKeyErrors((prev) => ({ ...prev, [providerId]: String(e) }));
+    }
+  };
+
+  // ── Fetch local models (LMStudio / Ollama) ─────────────────────────────────
+
+  const handleFetchLocalModels = async (providerId: string) => {
+    setFetchingLocalModels((prev) => ({ ...prev, [providerId]: true }));
+    setLocalModelFetchError((prev) => ({ ...prev, [providerId]: "" }));
+    try {
+      const ids = await invoke<string[]>("fetch_local_models", { providerId });
+      setLocalModels((prev) => ({ ...prev, [providerId]: ids }));
+    } catch (e) {
+      setLocalModelFetchError((prev) => ({ ...prev, [providerId]: String(e) }));
+    } finally {
+      setFetchingLocalModels((prev) => ({ ...prev, [providerId]: false }));
     }
   };
 
@@ -804,31 +865,65 @@ export default function ProvidersPanel() {
                 {!(showAddModelForm[p.id] ?? false) ? (
                   <button
                     className="btn-sm add-model-btn"
-                    onClick={() =>
-                      setShowAddModelForm((prev) => ({ ...prev, [p.id]: true }))
-                    }
+                    onClick={() => {
+                      setShowAddModelForm((prev) => ({
+                        ...prev,
+                        [p.id]: true,
+                      }));
+                      // Auto-fetch available models for local providers
+                      if (LOCAL_PROVIDER_TYPES.includes(p.provider_type)) {
+                        handleFetchLocalModels(p.id);
+                      }
+                    }}
                   >
                     + Add Model
                   </button>
                 ) : (
                   <div className="add-model-form">
-                    <input
-                      type="text"
-                      placeholder="Model ID (e.g. gpt-4o)"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      value={addModelForms[p.id]?.id ?? ""}
-                      onChange={(e) =>
-                        setAddModelForms((prev) => ({
-                          ...prev,
-                          [p.id]: {
-                            ...(prev[p.id] ?? BLANK_MODEL_FORM),
-                            id: e.target.value,
-                          },
-                        }))
-                      }
-                    />
+                    <div className="add-model-input-row">
+                      <input
+                        type="text"
+                        list={`model-suggestions-${p.id}`}
+                        placeholder="Model ID (e.g. gpt-4o)"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={addModelForms[p.id]?.id ?? ""}
+                        onChange={(e) =>
+                          setAddModelForms((prev) => ({
+                            ...prev,
+                            [p.id]: {
+                              ...(prev[p.id] ?? BLANK_MODEL_FORM),
+                              id: e.target.value,
+                            },
+                          }))
+                        }
+                      />
+                      {LOCAL_PROVIDER_TYPES.includes(p.provider_type) && (
+                        <button
+                          className="btn-sm btn-icon"
+                          title="Refresh available models from server"
+                          disabled={fetchingLocalModels[p.id] ?? false}
+                          onClick={() => handleFetchLocalModels(p.id)}
+                        >
+                          {fetchingLocalModels[p.id] ? "…" : "↺"}
+                        </button>
+                      )}
+                    </div>
+                    {/* Datalist: local → fetched IDs; cloud → known IDs */}
+                    <datalist id={`model-suggestions-${p.id}`}>
+                      {(LOCAL_PROVIDER_TYPES.includes(p.provider_type)
+                        ? (localModels[p.id] ?? [])
+                        : KNOWN_MODELS[p.provider_type]
+                      ).map((modelId) => (
+                        <option key={modelId} value={modelId} />
+                      ))}
+                    </datalist>
+                    {localModelFetchError[p.id] && (
+                      <div className="form-error">
+                        {localModelFetchError[p.id]}
+                      </div>
+                    )}
                     <div className="add-model-actions">
                       <button
                         className="btn-primary-sm"

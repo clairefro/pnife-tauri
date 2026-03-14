@@ -1,4 +1,4 @@
-use crate::provider_config::ProviderConfig;
+use crate::provider_config::{ProviderConfig, ProviderType};
 use crate::provider_manager::{
     save_provider_config,
     load_all_providers,
@@ -74,4 +74,53 @@ pub fn set_default_provider_model(provider_id: String, model_id: String) -> Resu
 #[tauri::command]
 pub fn clear_default_provider_model() -> Result<(), String> {
     clear_default_selection()
+}
+
+/// Fetch the list of model IDs from a running local server (LM Studio or Ollama).
+/// Returns an error for cloud providers — use the static list on the frontend instead.
+#[tauri::command]
+pub fn fetch_local_models(provider_id: String) -> Result<Vec<String>, String> {
+    let providers = load_all_providers()?;
+    let provider = providers
+        .get(&provider_id)
+        .ok_or_else(|| format!("Provider '{}' not found", provider_id))?;
+
+    let base = provider.base_url.trim_end_matches('/');
+
+    match &provider.provider_type {
+        ProviderType::Ollama => {
+            // GET /api/tags → { "models": [{ "name": "llama3.2", … }, …] }
+            let url = format!("{}/api/tags", base);
+            let resp: serde_json::Value = reqwest::blocking::get(&url)
+                .map_err(|e| format!("Could not reach Ollama at {}: {}", url, e))?
+                .json()
+                .map_err(|e| format!("Failed to parse Ollama response: {}", e))?;
+            let names = resp["models"]
+                .as_array()
+                .ok_or("Unexpected Ollama response: no 'models' array")?
+                .iter()
+                .filter_map(|m| m["name"].as_str().map(String::from))
+                .collect();
+            Ok(names)
+        }
+        ProviderType::LMStudio => {
+            // GET /v1/models → { "data": [{ "id": "…" }, …] }
+            let url = format!("{}/v1/models", base);
+            let resp: serde_json::Value = reqwest::blocking::get(&url)
+                .map_err(|e| format!("Could not reach LM Studio at {}: {}", url, e))?
+                .json()
+                .map_err(|e| format!("Failed to parse LM Studio response: {}", e))?;
+            let ids = resp["data"]
+                .as_array()
+                .ok_or("Unexpected LM Studio response: no 'data' array")?
+                .iter()
+                .filter_map(|m| m["id"].as_str().map(String::from))
+                .collect();
+            Ok(ids)
+        }
+        t => Err(format!(
+            "{:?} is a cloud provider — model IDs must be entered manually",
+            t
+        )),
+    }
 }

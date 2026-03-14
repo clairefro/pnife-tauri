@@ -117,7 +117,8 @@ pub fn run() {
                 commands::save_models_for_provider,
                 commands::get_default_provider_model,
                 commands::set_default_provider_model,
-                commands::clear_default_provider_model
+                commands::clear_default_provider_model,
+                commands::fetch_local_models
             ]
         )
         .run(tauri::generate_context!())

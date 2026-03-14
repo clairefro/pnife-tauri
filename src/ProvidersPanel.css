@@ -292,6 +292,17 @@
   padding: 0.7rem 0.8rem;
 }
 
+.add-model-input-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.add-model-input-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
 .add-model-form input[type="text"] {
   background: #1c1d21;
   border: 1.5px solid #33343a;
@@ -306,6 +317,12 @@
 
 .add-model-form input[type="text"]:focus {
   border-color: var(--color-accent);
+}
+
+.btn-icon {
+  flex-shrink: 0;
+  padding: 0.28em 0.6em;
+  font-size: 0.9rem;
 }
 
 .model-default-check {
