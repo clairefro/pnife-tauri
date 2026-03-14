@@ -12,8 +12,7 @@
 
 ## Provider Struct
 
-```
-rust
+```rust
 debug struct ProviderConfig {
     pub id: String,           // unique, e.g. "openai"
     pub display_name: String, // e.g. "OpenAI"
