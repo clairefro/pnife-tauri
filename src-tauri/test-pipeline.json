@@ -1,0 +1,24 @@
+{
+  "id": "test-pipeline",
+  "name": "Test Pipeline",
+  "description": "A test pipeline with AI prompt and regex replace steps.",
+  "steps": [
+    {
+      "id": "step-1",
+      "name": "Summarize Text",
+      "category": "transformation",
+      "type": "ai_prompt",
+      "prompt": "Summarize the following text",
+      "requires": ["llm:text"]
+    },
+    {
+      "id": "step-2",
+      "name": "Replace Digits",
+      "category": "transformation",
+      "type": "regex_replace",
+      "pattern": "\\d+",
+      "replacement": "#",
+      "requires": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "summarize",
+    "name": "Summarize",
+    "description": "Summarize the following text",
+    "steps": [
+      {
+        "type": "prompt",
+        "prompt": "Summarize the following text"
+      }
+    ]
+  }
+]

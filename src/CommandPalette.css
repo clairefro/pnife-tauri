@@ -1,0 +1,67 @@
+.command-palette {
+  margin-top: 2vh;
+  background: #18191c;
+  color: #f6f6f6;
+  border-radius: 4px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  width: 370px;
+  max-width: 95vw;
+  z-index: 1000;
+  padding: 0.7rem 0.7rem 0.5rem 0.7rem;
+  border: 1.5px solid #23242a;
+  font-family: var(--font-family);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.command-input {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font-size: 1.05rem;
+  border: 1.5px solid #23242a;
+  border-radius: 4px;
+  margin-bottom: 0.7rem;
+  background: #141417;
+  color: #f6f6f6;
+  outline: none;
+  transition: border 0.15s;
+  box-shadow: none;
+}
+.command-input:focus {
+  border: 1.5px solid #4f8cff;
+}
+.command-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.command-list li {
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.13s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1.5px solid transparent;
+  margin-bottom: 0.5rem;
+  background: #191a1e;
+}
+.command-list li:hover,
+.command-list li:focus {
+  background: #23242a;
+  border: 1.5px solid #4f8cff;
+}
+.command-list .desc {
+  font-size: 0.97em;
+  color: #b0b0c0;
+  font-weight: 400;
+}
+.command-list .empty {
+  color: #555a6a;
+  text-align: center;
+  padding: 1.2rem 0;
+  font-size: 1.02em;
+}
