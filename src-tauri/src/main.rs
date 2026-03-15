@@ -74,6 +74,7 @@ fn main() {
                 base_url: base_url.clone(),
                 provider_type,
                 is_cloud: *is_cloud,
+                models: vec![],
             };
             match save_provider_config(&provider) {
                 Ok(_) => match set_api_key(&provider.id, api_key) {

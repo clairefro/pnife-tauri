@@ -205,7 +205,15 @@ pub fn clear_default_selection() -> Result<(), String> {
 pub fn save_provider_config(provider: &ProviderConfig) -> Result<(), String> {
     let path = providers_config_path();
     let mut providers = load_all_providers()?;
-    providers.insert(provider.id.clone(), provider.clone());
+    // Preserve existing models when the incoming config doesn't carry them
+    // (e.g. when only metadata like base_url is being edited from the frontend).
+    let mut updated = provider.clone();
+    if updated.models.is_empty() {
+        if let Some(existing) = providers.get(&provider.id) {
+            updated.models = existing.models.clone();
+        }
+    }
+    providers.insert(provider.id.clone(), updated);
     let list: Vec<_> = providers.values().cloned().collect();
     fs::write(&path, serde_json::to_string_pretty(&list).unwrap())
         .map_err(|e| e.to_string())
@@ -218,14 +226,40 @@ pub fn load_all_providers() -> Result<HashMap<String, ProviderConfig>, String> {
     }
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
     // Support both Vec<ProviderConfig> (current) and legacy HashMap formats.
-    // On unrecognized format (e.g. data from a previous app version), start fresh.
-    if let Ok(list) = serde_json::from_str::<Vec<ProviderConfig>>(&data) {
-        return Ok(list.into_iter().map(|p| (p.id.clone(), p)).collect());
+    let mut providers: HashMap<String, ProviderConfig> =
+        if let Ok(list) = serde_json::from_str::<Vec<ProviderConfig>>(&data) {
+            list.into_iter().map(|p| (p.id.clone(), p)).collect()
+        } else if let Ok(map) = serde_json::from_str::<HashMap<String, ProviderConfig>>(&data) {
+            map
+        } else {
+            HashMap::new()
+        };
+
+    // Migration: if a provider has no inline models, check for the old
+    // models-{id}.json sidecar file and absorb it. Serde ignores the
+    // now-removed `provider_id` field in the old JSON automatically.
+    let dir = path.parent().unwrap().to_path_buf();
+    let mut migrated = false;
+    for provider in providers.values_mut() {
+        if provider.models.is_empty() {
+            let old_path = dir.join(format!("models-{}.json", provider.id));
+            if old_path.exists() {
+                if let Ok(raw) = fs::read_to_string(&old_path) {
+                    if let Ok(models) = serde_json::from_str::<Vec<crate::model::ModelConfig>>(&raw) {
+                        provider.models = models;
+                        migrated = true;
+                        let _ = fs::remove_file(&old_path);
+                    }
+                }
+            }
+        }
     }
-    if let Ok(map) = serde_json::from_str::<HashMap<String, ProviderConfig>>(&data) {
-        return Ok(map);
+    if migrated {
+        let list: Vec<_> = providers.values().cloned().collect();
+        let _ = fs::write(&path, serde_json::to_string_pretty(&list).unwrap());
     }
-    Ok(HashMap::new())
+
+    Ok(providers)
 }
 
 pub fn remove_provider(id: &str) -> Result<(), String> {
@@ -270,22 +304,24 @@ pub fn get_api_key(provider_id: &str) -> Result<String, String> {
     }
 }
 
-// Model management (per provider)
+// Model management — models are stored inline inside each ProviderConfig.
 pub fn save_models(provider_id: &str, models: &[ModelConfig]) -> Result<(), String> {
-    let mut path = providers_config_path();
-    path.set_file_name(format!("models-{}.json", provider_id));
-    fs::write(&path, serde_json::to_string_pretty(models).unwrap())
+    let path = providers_config_path();
+    let mut providers = load_all_providers()?;
+    if let Some(p) = providers.get_mut(provider_id) {
+        p.models = models.to_vec();
+    }
+    let list: Vec<_> = providers.values().cloned().collect();
+    fs::write(&path, serde_json::to_string_pretty(&list).unwrap())
         .map_err(|e| e.to_string())
 }
 
 pub fn load_models(provider_id: &str) -> Result<Vec<ModelConfig>, String> {
-    let mut path = providers_config_path();
-    path.set_file_name(format!("models-{}.json", provider_id));
-    if !path.exists() {
-        return Ok(vec![]);
-    }
-    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&data).map_err(|e| e.to_string())
+    let providers = load_all_providers()?;
+    Ok(providers
+        .get(provider_id)
+        .map(|p| p.models.clone())
+        .unwrap_or_default())
 }
 
 #[cfg(test)]

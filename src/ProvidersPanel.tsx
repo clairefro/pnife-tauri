@@ -22,7 +22,6 @@ interface ProviderConfig {
 
 interface ModelConfig {
   id: string;
-  provider_id: string;
   is_default: boolean;
 }
 
@@ -464,7 +463,6 @@ export default function ProvidersPanel() {
     const existing = models[providerId] ?? [];
     const newModel: ModelConfig = {
       id: form.id.trim(),
-      provider_id: providerId,
       is_default: form.is_default,
     };
     // If this is_default, unset others

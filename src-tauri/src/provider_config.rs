@@ -1,3 +1,4 @@
+use crate::model::ModelConfig;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -13,11 +14,13 @@ pub enum ProviderType {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ProviderConfig {
-    pub id: String,           // unique, e.g. "openai"
-    pub display_name: String, // e.g. "OpenAI"
-    pub base_url: String,     // defaulted per provider, user-overridable
+    pub id: String,
+    pub display_name: String,
+    pub base_url: String,
     pub provider_type: ProviderType,
     pub is_cloud: bool,
+    #[serde(default)]
+    pub models: Vec<ModelConfig>,
 }
 
 impl ProviderConfig {
