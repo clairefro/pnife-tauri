@@ -125,7 +125,7 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
             </button>
           )}
           <button className="btn-edit" onClick={onEdit} disabled={running}>
-            ✎ Edit
+            Edit
           </button>
           {running ? (
             <button className="btn-stop" onClick={handleStop}>

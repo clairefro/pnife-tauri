@@ -43,43 +43,62 @@
   flex-shrink: 0;
 }
 
-.btn-edit {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-bright);
+/* ── Shared action button base ─────────────────────────────────────── */
+.btn-edit,
+.btn-delete,
+.btn-confirm-delete,
+.btn-cancel-inline,
+.btn-run,
+.btn-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.9rem;
+  padding: 0 0.85rem;
   border-radius: var(--radius);
-  padding: 0.3em 0.75em;
-  font-size: 0.78rem;
-  font-weight: 500;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  letter-spacing: 0;
   cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  white-space: nowrap;
   transition:
     color 0.12s,
-    border-color 0.12s;
+    border-color 0.12s,
+    background 0.12s,
+    opacity 0.12s;
 }
 
-.btn-edit:hover:not(:disabled) {
-  color: var(--color-text);
-  border-color: var(--color-text-secondary);
-}
-
-.btn-edit:disabled {
+.btn-edit:disabled,
+.btn-delete:disabled,
+.btn-confirm-delete:disabled,
+.btn-cancel-inline:disabled,
+.btn-run:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
+/* Edit — border only on hover */
+.btn-edit {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+
+.btn-edit:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-border-bright);
+}
+
+/* Delete — muted red border always visible */
 .btn-delete {
   background: transparent;
   color: var(--color-error);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  padding: 0.3em 0.75em;
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.12s,
-    border-color 0.12s,
-    background 0.12s;
+  border-color: rgba(224, 92, 92, 0.3);
 }
 
 .btn-delete:hover:not(:disabled) {
@@ -87,13 +106,9 @@
   background: rgba(224, 92, 92, 0.08);
 }
 
-.btn-delete:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
+/* Inline confirm */
 .confirm-label {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--color-error);
   font-weight: 500;
 }
@@ -101,72 +116,40 @@
 .btn-confirm-delete {
   background: var(--color-error);
   color: #fff;
-  border: none;
-  border-radius: var(--radius);
-  padding: 0.3em 0.65em;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.12s;
+  border-color: var(--color-error);
 }
 
-.btn-confirm-delete:hover {
+.btn-confirm-delete:hover:not(:disabled) {
   opacity: 0.85;
 }
 
 .btn-cancel-inline {
   background: transparent;
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-bright);
-  border-radius: var(--radius);
-  padding: 0.3em 0.65em;
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.12s,
-    border-color 0.12s;
+  border-color: var(--color-border-bright);
 }
 
-.btn-cancel-inline:hover {
+.btn-cancel-inline:hover:not(:disabled) {
   color: var(--color-text);
   border-color: var(--color-text-secondary);
 }
 
+/* Run — filled accent */
 .btn-run {
   background: var(--color-accent);
   color: #000;
-  border: none;
-  border-radius: var(--radius);
-  padding: 0.3em 0.9em;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-  letter-spacing: 0.03em;
-  transition: opacity 0.1s;
+  border-color: var(--color-accent);
 }
 
 .btn-run:hover:not(:disabled) {
   opacity: 0.85;
 }
 
-.btn-run:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
+/* Stop — red outline */
 .btn-stop {
   background: transparent;
   color: var(--color-error);
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius);
-  padding: 0.3em 0.9em;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.1s;
+  border-color: var(--color-error);
 }
 
 .btn-stop:hover {
