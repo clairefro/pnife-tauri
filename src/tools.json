@@ -5,7 +5,7 @@
     "description": "Summarize the following text",
     "steps": [
       {
-        "type": "prompt",
+        "type": "ai_prompt",
         "prompt": "Summarize the following text"
       }
     ]

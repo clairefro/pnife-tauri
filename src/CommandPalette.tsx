@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
-import toolsData from "./tools.json";
+import { invoke } from "@tauri-apps/api/core";
 import "./CommandPalette.css";
+
+export interface ToolStep {
+  type: string;
+  prompt?: string;
+  pattern?: string;
+  replacement?: string;
+}
 
 export interface Tool {
   id: string;
   name: string;
   description: string;
-  steps: Array<{ type: string; prompt: string }>;
+  shortcut?: string;
+  steps: ToolStep[];
 }
 
 export default function CommandPalette({
@@ -15,18 +23,23 @@ export default function CommandPalette({
   onSelect: (tool: Tool) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [allTools, setAllTools] = useState<Tool[]>([]);
   const [filtered, setFiltered] = useState<Tool[]>([]);
+
+  useEffect(() => {
+    invoke<Tool[]>("list_tools").then(setAllTools).catch(console.error);
+  }, []);
 
   useEffect(() => {
     const q = query.toLowerCase();
     setFiltered(
-      toolsData.filter(
-        (tool: Tool) =>
+      allTools.filter(
+        (tool) =>
           tool.name.toLowerCase().includes(q) ||
           tool.description.toLowerCase().includes(q),
       ),
     );
-  }, [query]);
+  }, [query, allTools]);
 
   return (
     <div className="command-palette">

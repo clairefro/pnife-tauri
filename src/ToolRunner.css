@@ -1,0 +1,135 @@
+.tool-runner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 900px;
+  padding: 0 0 1rem;
+}
+
+.tool-runner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #18191c;
+  border: 1.5px solid #23242a;
+  border-radius: 8px;
+}
+
+.tool-runner-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tool-runner-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.tool-runner-desc {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+}
+
+.btn-run {
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45em 1.2em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.13s;
+}
+
+.btn-run:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btn-run:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-stop {
+  background: transparent;
+  color: #e06c75;
+  border: 1px solid #e06c75;
+  border-radius: 6px;
+  padding: 0.45em 1.2em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.13s;
+}
+
+.btn-stop:hover {
+  opacity: 0.75;
+}
+
+.tool-runner-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.tool-runner-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pane-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.tool-runner-textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  background: #111214;
+  border: 1.5px solid #23242a;
+  border-radius: 7px;
+  color: var(--color-text);
+  font-family: monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.12s;
+}
+
+.tool-runner-textarea:focus {
+  border-color: var(--color-accent);
+}
+
+.tool-runner-output {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.tool-runner-output:not(:placeholder-shown) {
+  color: var(--color-text);
+}
+
+.tool-runner-error {
+  font-size: 0.83rem;
+  color: #e06c75;
+  background: rgba(224, 108, 117, 0.08);
+  border: 1px solid rgba(224, 108, 117, 0.3);
+  border-radius: 6px;
+  padding: 0.5em 0.9em;
+}

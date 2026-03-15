@@ -121,7 +121,9 @@ pub fn run() {
                 commands::clear_default_provider_model,
                 commands::fetch_local_models,
                 commands::ai_prompt,
-                commands::test_connection
+                commands::test_connection,
+                commands::run_tool,
+                commands::list_tools
             ]
         )
         .run(tauri::generate_context!())

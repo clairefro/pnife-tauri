@@ -143,3 +143,73 @@ pub async fn ai_prompt(
 pub async fn test_connection(provider_id: String, model_id: String) -> Result<TestResult, String> {
     crate::ai_adapter::run_test(&provider_id, &model_id).await
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ToolStepConfig {
+    pub r#type: String,
+    pub prompt: Option<String>,
+    pub pattern: Option<String>,
+    pub replacement: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ToolConfig {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    pub shortcut: Option<String>,
+    pub steps: Vec<ToolStepConfig>,
+}
+
+/// List tools from ~/.config/pnife/tools.json (or platform equivalent).
+#[tauri::command]
+pub fn list_tools() -> Result<Vec<ToolConfig>, String> {
+    let mut path = crate::provider_config::providers_config_path();
+    path.set_file_name("tools.json");
+    if !path.exists() {
+        return Ok(vec![]);
+    }
+    let data = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    serde_json::from_str(&data).map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct ToolStep {
+    pub r#type: String,
+    pub prompt: Option<String>,
+    pub pattern: Option<String>,
+    pub replacement: Option<String>,
+}
+
+/// Execute a pipeline of steps using the user's default provider + model.
+/// Handles step types: "ai_prompt" / "prompt" (LLM call), "regex_replace".
+#[tauri::command]
+pub async fn run_tool(steps: Vec<ToolStep>, input: String) -> Result<String, String> {
+    let default_sel = get_default_selection()?
+        .ok_or_else(|| "No default provider/model configured. Please set one in the Providers tab.".to_string())?;
+    let provider_id = default_sel.provider_id.clone();
+    let model_id = default_sel.model_id.clone();
+
+    let mut current = input;
+    for step in &steps {
+        match step.r#type.as_str() {
+            "ai_prompt" | "prompt" => {
+                let prompt_text = step.prompt.as_deref().unwrap_or("");
+                let full_prompt = format!("{0}\n\n{1}", prompt_text, current);
+                let result = crate::ai_adapter::run_prompt(
+                    &provider_id, &model_id, &full_prompt, None,
+                ).await?;
+                current = result.content;
+            }
+            "regex_replace" => {
+                let pattern = step.pattern.as_deref().ok_or("regex_replace step missing 'pattern'")?;
+                let replacement = step.replacement.as_deref().ok_or("regex_replace step missing 'replacement'")?;
+                let re = regex::Regex::new(pattern).map_err(|e| e.to_string())?;
+                current = re.replace_all(&current, replacement).to_string();
+            }
+            other => return Err(format!("Unknown step type: {}", other)),
+        }
+    }
+    Ok(current)
+}

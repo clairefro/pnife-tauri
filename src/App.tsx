@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import CommandPalette, { Tool } from "./CommandPalette";
 import ProvidersPanel, { DefaultSelection } from "./ProvidersPanel";
+import ToolRunner from "./ToolRunner";
 import "./App.css";
 
 type Tab = "tools" | "providers";
@@ -66,13 +67,7 @@ function App() {
       {tab === "tools" && (
         <>
           <CommandPalette onSelect={setSelectedTool} />
-          {selectedTool && (
-            <div className="tool-details">
-              <h2>{selectedTool.name}</h2>
-              <p>{selectedTool.description}</p>
-              <pre>{JSON.stringify(selectedTool.steps, null, 2)}</pre>
-            </div>
-          )}
+          {selectedTool && <ToolRunner tool={selectedTool} />}
         </>
       )}
 
