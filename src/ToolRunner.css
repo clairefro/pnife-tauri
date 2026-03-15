@@ -146,6 +146,7 @@
   font-size: 0.7rem;
   font-weight: 500;
   opacity: 0.65;
+  margin-left: 0.4rem;
 }
 
 .btn-run:hover:not(:disabled) {

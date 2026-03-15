@@ -46,6 +46,21 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
     setTimeout(() => textareaRef.current?.focus(), 50);
   }, [tool.id]);
 
+  // Global hotkeys: Cmd/Ctrl+Enter to run, Escape to stop/back
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!running && input.trim()) handleRun();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        if (running) handleStop();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [running, input]);
+
   const handleRun = async () => {
     cancelledRef.current = false;
     setRunning(true);
@@ -155,16 +170,6 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Enter input text…"
             spellCheck={false}
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                e.preventDefault();
-                if (!running && input.trim()) handleRun();
-              } else if (e.key === "Escape") {
-                e.preventDefault();
-                if (running) handleStop();
-                else onBack();
-              }
-            }}
           />
         </div>
 

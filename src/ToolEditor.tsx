@@ -42,6 +42,9 @@ export default function ToolEditor({
 }: Props) {
   const isNew = !tool;
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmRemoveStep, setConfirmRemoveStep] = useState<Set<number>>(
+    new Set(),
+  );
   const [name, setName] = useState(tool?.name ?? "");
   const [description, setDescription] = useState(tool?.description ?? "");
   const [steps, setSteps] = useState<DraftStep[]>(
@@ -62,6 +65,23 @@ export default function ToolEditor({
 
   const removeStep = (idx: number) => {
     setSteps((prev) => prev.filter((_, i) => i !== idx));
+    setConfirmRemoveStep((prev) => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
+  };
+
+  const requestRemoveStep = (idx: number) => {
+    setConfirmRemoveStep((prev) => new Set(prev).add(idx));
+  };
+
+  const cancelRemoveStep = (idx: number) => {
+    setConfirmRemoveStep((prev) => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
   };
 
   const updateStep = (idx: number, patch: Partial<DraftStep>) => {
@@ -240,13 +260,31 @@ export default function ToolEditor({
                 {step.type === "ai_prompt" ? "AI Prompt" : "Regex Replace"}
               </span>
               <span className="step-num">Step {idx + 1}</span>
-              <button
-                className="btn-remove-step"
-                onClick={() => removeStep(idx)}
-                title="Remove step"
-              >
-                ✕
-              </button>
+              {confirmRemoveStep.has(idx) ? (
+                <>
+                  <span className="confirm-label">Remove?</span>
+                  <button
+                    className="btn-confirm-delete"
+                    onClick={() => removeStep(idx)}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    className="btn-cancel-inline"
+                    onClick={() => cancelRemoveStep(idx)}
+                  >
+                    No
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="btn-remove-step"
+                  onClick={() => requestRemoveStep(idx)}
+                  title="Remove step"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <div className="step-field">
               <label className="field-label">Step Name</label>

@@ -967,7 +967,7 @@ export default function ProvidersPanel({
                               >
                                 {result.ok
                                   ? `✓ ${result.latency_ms}ms`
-                                  : `✗ ${result.error ?? "Failed"}`}
+                                  : "✗ Failed"}
                               </span>
                             )}
                             <button
@@ -979,7 +979,7 @@ export default function ProvidersPanel({
                               }}
                               title="Test this model"
                             >
-                              {testingConn[tkey] ? "…" : "Test"}
+                              {testingConn[tkey] ? "Testing…" : "Test"}
                             </button>
                           </>
                         );

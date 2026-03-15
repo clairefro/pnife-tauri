@@ -532,7 +532,7 @@
 }
 
 .btn-sm {
-  background: #23242a;
+  background: transparent;
   color: var(--color-text-secondary);
   border: 1px solid #33343a;
   border-radius: 5px;
@@ -541,7 +541,8 @@
   cursor: pointer;
   transition:
     background 0.13s,
-    color 0.13s;
+    color 0.13s,
+    border-color 0.13s;
   box-shadow: none;
 }
 
@@ -567,6 +568,23 @@
   color: #e06c75;
   border-color: transparent;
   background: rgba(224, 108, 117, 0.1);
+}
+
+/* ── Connection test result badge ────────────────────────────── */
+
+.conn-result {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+}
+
+.conn-ok {
+  color: var(--color-ok);
+}
+
+.conn-fail {
+  color: var(--color-error);
 }
 
 /* ── Card actions row (Edit + Delete) ────────────────────────── */
