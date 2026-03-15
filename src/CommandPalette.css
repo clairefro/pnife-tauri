@@ -1,68 +1,84 @@
 .command-palette {
-  margin-top: 2vh;
-  background: #18191c;
-  color: #f6f6f6;
-  border-radius: 4px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
-  width: 370px;
+  margin-top: 1.5vh;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  width: 340px;
   max-width: 95vw;
   z-index: 1000;
-  padding: 0.7rem 0.7rem 0.5rem 0.7rem;
-  border: 1.5px solid #23242a;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
   font-family: var(--font-family);
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  gap: 0;
 }
+
 .command-input {
   width: 100%;
-  padding: 0.7rem 1rem;
-  font-size: 1.05rem;
-  border: 1.5px solid #23242a;
-  border-radius: 4px;
-  margin-bottom: 0.7rem;
-  background: #141417;
-  color: #f6f6f6;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.88rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.4rem;
+  background: var(--color-bg);
+  color: var(--color-text);
   outline: none;
-  transition: border 0.15s;
-  box-shadow: none;
+  transition: border-color 0.12s;
+  box-sizing: border-box;
 }
+
 .command-input:focus {
-  border: 1.5px solid #4f8cff;
+  border-color: var(--color-accent);
 }
+
 .command-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
 }
+
 .command-list li {
-  padding: 0.5rem 0.8rem;
-  border-radius: 4px;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: background 0.13s;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  border: 1.5px solid transparent;
-  margin-bottom: 0.5rem;
-  background: #191a1e;
+  gap: 1px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
 }
+
+.command-list li strong {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .command-list li:hover,
 .command-list li:focus,
 .command-list li.highlighted {
-  background: #23242a;
-  border: 1.5px solid #4f8cff;
+  background: var(--color-surface-2);
+  border-color: var(--color-accent);
 }
+
+.command-list li.highlighted strong {
+  color: var(--color-accent);
+}
+
 .command-list .desc {
-  font-size: 0.97em;
-  color: #b0b0c0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
   font-weight: 400;
 }
+
 .command-list .empty {
-  color: #555a6a;
+  color: var(--color-text-secondary);
   text-align: center;
-  padding: 1.2rem 0;
-  font-size: 1.02em;
+  padding: 1rem 0;
+  font-size: 0.82rem;
 }
