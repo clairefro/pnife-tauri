@@ -1,7 +1,9 @@
 use crate::provider_config::{ProviderConfig, ProviderType};
-use crate::provider_manager::{
+use crate::provider_manager::
+{
     save_provider_config,
     load_all_providers,
+    load_all_providers_ordered,
     remove_provider,
     set_api_key,
     get_api_key,
@@ -22,8 +24,7 @@ pub fn greet(name: &str) -> String {
 
 #[tauri::command]
 pub fn list_providers() -> Result<Vec<ProviderConfig>, String> {
-    let map = load_all_providers()?;
-    Ok(map.into_values().collect())
+    load_all_providers_ordered()
 }
 
 #[tauri::command]

@@ -27,6 +27,16 @@
   font-size: 0.97rem;
 }
 
+.no-default-warning {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e06c75;
+  background: rgba(224, 108, 117, 0.08);
+  border: 1px solid rgba(224, 108, 117, 0.3);
+  border-radius: 6px;
+  padding: 0.5em 0.9em;
+}
+
 /* ── Provider card ───────────────────────────────────────────── */
 
 .providers-list {
@@ -49,10 +59,10 @@
 .provider-card-left {
   flex: 0 0 220px;
   min-width: 0;
-  padding: 1rem 1.1rem 0.8rem;
+  padding: 0.7rem 1rem 0.7rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
   border-right: 1.5px solid #23242a;
 }
 
@@ -94,14 +104,28 @@
   font-weight: 600;
   font-size: 1.03rem;
   color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provider-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
 }
 
 .provider-cloud-badge {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--color-text-secondary);
   background: #23242a;
   border-radius: 4px;
-  padding: 0.15em 0.5em;
+  padding: 0.15em 0.45em;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .provider-url {
@@ -229,6 +253,20 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 0.4rem;
+}
+
+.model-default-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #666;
+  background: #1e1f24;
+  border: 1px solid #33343a;
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .radio-dot {

@@ -77,16 +77,32 @@ const CLOUD_DEFAULT: Record<ProviderType, boolean> = {
   Custom: false,
 };
 
+const DEFAULT_API_KEYS: Record<ProviderType, string> = {
+  OpenAI: "",
+  Anthropic: "",
+  LMStudio: "lm-studio",
+  Ollama: "ollama",
+  Google: "",
+  Custom: "",
+};
+
 // Well-known model IDs for cloud providers shown as datalist suggestions.
 // LMStudio / Ollama are empty here — models are fetched live from the server.
 const KNOWN_MODELS: Record<ProviderType, string[]> = {
   OpenAI: [
+    "gpt-5.4",
+    "gpt-5-mini",
+    "gpt-5-nano",
+    "gpt-5.3-codex",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "o3-high",
+    "o3-mini",
     "gpt-4o",
     "gpt-4o-mini",
     "o1",
     "o1-mini",
     "o3",
-    "o3-mini",
     "gpt-4-turbo",
     "gpt-4",
     "gpt-3.5-turbo",
@@ -228,7 +244,19 @@ export default function ProvidersPanel() {
   const loadProviders = useCallback(async () => {
     try {
       const list = await invoke<ProviderConfig[]>("list_providers");
-      setProviders(list);
+      // Pin the provider that owns the default model to the top; preserve
+      // backend order for the rest (backend now stores insertion order).
+      const sel = await invoke<{
+        provider_id: string;
+        model_id: string;
+      } | null>("get_default_provider_model");
+      const sorted = sel
+        ? [
+            ...list.filter((p) => p.id === sel.provider_id),
+            ...list.filter((p) => p.id !== sel.provider_id),
+          ]
+        : list;
+      setProviders(sorted);
       // Test API key status for each
       const statuses: Record<string, boolean | null> = {};
       await Promise.all(
@@ -304,6 +332,7 @@ export default function ProvidersPanel() {
       display_name: DEFAULT_NAMES[type],
       base_url: DEFAULT_URLS[type],
       is_cloud: CLOUD_DEFAULT[type],
+      api_key: DEFAULT_API_KEYS[type],
     }));
   };
 
@@ -316,6 +345,12 @@ export default function ProvidersPanel() {
     }
     if (!providerForm.display_name.trim()) {
       setFormError("Display name is required.");
+      return;
+    }
+    if (providers.some((p) => p.id === providerForm.id.trim())) {
+      setFormError(
+        `A provider with ID "${providerForm.id.trim()}" already exists.`,
+      );
       return;
     }
     setSaving(true);
@@ -461,6 +496,13 @@ export default function ProvidersPanel() {
     const form = addModelForms[providerId] ?? BLANK_MODEL_FORM;
     if (!form.id.trim()) return;
     const existing = models[providerId] ?? [];
+    if (existing.some((m) => m.id === form.id.trim())) {
+      setModelErrors((prev) => ({
+        ...prev,
+        [providerId]: `Model "${form.id.trim()}" already exists.`,
+      }));
+      return;
+    }
     const newModel: ModelConfig = {
       id: form.id.trim(),
       is_default: form.is_default,
@@ -673,6 +715,11 @@ export default function ProvidersPanel() {
       )}
 
       <div className="providers-list">
+        {providers.length > 0 && !defaultSelection && (
+          <div className="no-default-warning">
+            ⚠ Please select a default model
+          </div>
+        )}
         {providers.map((p) => {
           const keyOk = apiKeyStatuses[p.id];
           const providerModels = models[p.id] ?? [];
@@ -775,13 +822,12 @@ export default function ProvidersPanel() {
                         {p.provider_type}
                       </span>
                       <span className="provider-name">{p.display_name}</span>
+                      <span className="provider-cloud-badge">
+                        {p.is_cloud ? "☁ Cloud" : "⬡ Local"}
+                      </span>
                     </div>
 
                     <div className="provider-url">{p.base_url}</div>
-
-                    <span className="provider-cloud-badge">
-                      {p.is_cloud ? "☁ Cloud" : "⬡ Local"}
-                    </span>
 
                     <div className="provider-key-row">
                       <span
@@ -904,6 +950,9 @@ export default function ProvidersPanel() {
                         <span
                           className={`radio-dot${isDefault ? " radio-dot-active" : ""}`}
                         />
+                        {isDefault && (
+                          <span className="model-default-tag">DEFAULT</span>
+                        )}
                       </div>
                       <div className="model-info">
                         <span className="model-id">{m.id}</span>

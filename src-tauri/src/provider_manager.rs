@@ -1,5 +1,7 @@
 use crate::provider_config::{ProviderConfig, providers_config_path};
 use crate::model::ModelConfig;
+// NOTE: We use Vec (not HashMap) as the canonical in-memory store so that
+// provider order is stable across saves — HashMap iteration order is random.
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Key, Nonce,
@@ -202,45 +204,36 @@ pub fn clear_default_selection() -> Result<(), String> {
     Ok(())
 }
 
-pub fn save_provider_config(provider: &ProviderConfig) -> Result<(), String> {
+fn write_providers(list: &[ProviderConfig]) -> Result<(), String> {
     let path = providers_config_path();
-    let mut providers = load_all_providers()?;
-    // Preserve existing models when the incoming config doesn't carry them
-    // (e.g. when only metadata like base_url is being edited from the frontend).
-    let mut updated = provider.clone();
-    if updated.models.is_empty() {
-        if let Some(existing) = providers.get(&provider.id) {
-            updated.models = existing.models.clone();
-        }
-    }
-    providers.insert(provider.id.clone(), updated);
-    let list: Vec<_> = providers.values().cloned().collect();
-    fs::write(&path, serde_json::to_string_pretty(&list).unwrap())
+    fs::write(&path, serde_json::to_string_pretty(list).unwrap())
         .map_err(|e| e.to_string())
 }
 
-pub fn load_all_providers() -> Result<HashMap<String, ProviderConfig>, String> {
+/// Load providers as an ordered Vec, preserving the on-disk insertion order.
+pub fn load_all_providers_ordered() -> Result<Vec<ProviderConfig>, String> {
     let path = providers_config_path();
     if !path.exists() {
-        return Ok(HashMap::new());
+        return Ok(vec![]);
     }
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    // Support both Vec<ProviderConfig> (current) and legacy HashMap formats.
-    let mut providers: HashMap<String, ProviderConfig> =
-        if let Ok(list) = serde_json::from_str::<Vec<ProviderConfig>>(&data) {
-            list.into_iter().map(|p| (p.id.clone(), p)).collect()
-        } else if let Ok(map) = serde_json::from_str::<HashMap<String, ProviderConfig>>(&data) {
-            map
+    // Current format: JSON array. Legacy format: JSON object (HashMap).
+    let mut list: Vec<ProviderConfig> =
+        if let Ok(v) = serde_json::from_str::<Vec<ProviderConfig>>(&data) {
+            v
+        } else if let Ok(map) = serde_json::from_str::<std::collections::HashMap<String, ProviderConfig>>(&data) {
+            // Deterministic order when migrating from map: sort by id.
+            let mut v: Vec<_> = map.into_values().collect();
+            v.sort_by(|a, b| a.id.cmp(&b.id));
+            v
         } else {
-            HashMap::new()
+            vec![]
         };
 
-    // Migration: if a provider has no inline models, check for the old
-    // models-{id}.json sidecar file and absorb it. Serde ignores the
-    // now-removed `provider_id` field in the old JSON automatically.
+    // Migration: absorb old models-{id}.json sidecars.
     let dir = path.parent().unwrap().to_path_buf();
     let mut migrated = false;
-    for provider in providers.values_mut() {
+    for provider in list.iter_mut() {
         if provider.models.is_empty() {
             let old_path = dir.join(format!("models-{}.json", provider.id));
             if old_path.exists() {
@@ -255,20 +248,41 @@ pub fn load_all_providers() -> Result<HashMap<String, ProviderConfig>, String> {
         }
     }
     if migrated {
-        let list: Vec<_> = providers.values().cloned().collect();
-        let _ = fs::write(&path, serde_json::to_string_pretty(&list).unwrap());
+        let _ = write_providers(&list);
     }
 
-    Ok(providers)
+    Ok(list)
+}
+
+/// Convenience wrapper returning a HashMap for callers that only need lookup.
+pub fn load_all_providers() -> Result<std::collections::HashMap<String, ProviderConfig>, String> {
+    Ok(load_all_providers_ordered()?
+        .into_iter()
+        .map(|p| (p.id.clone(), p))
+        .collect())
+}
+
+pub fn save_provider_config(provider: &ProviderConfig) -> Result<(), String> {
+    let mut list = load_all_providers_ordered()?;
+    // Preserve existing models when the incoming config doesn't carry them.
+    let mut updated = provider.clone();
+    if let Some(existing) = list.iter().find(|p| p.id == provider.id) {
+        if updated.models.is_empty() {
+            updated.models = existing.models.clone();
+        }
+    }
+    if let Some(slot) = list.iter_mut().find(|p| p.id == provider.id) {
+        *slot = updated;  // update in place, preserving position
+    } else {
+        list.push(updated);  // append new providers at the end
+    }
+    write_providers(&list)
 }
 
 pub fn remove_provider(id: &str) -> Result<(), String> {
-    let mut providers = load_all_providers()?;
-    providers.remove(id);
-    let path = providers_config_path();
-    let list: Vec<_> = providers.values().cloned().collect();
-    fs::write(&path, serde_json::to_string_pretty(&list).unwrap())
-        .map_err(|e| e.to_string())
+    let mut list = load_all_providers_ordered()?;
+    list.retain(|p| p.id != id);
+    write_providers(&list)
 }
 
 pub fn set_api_key(provider_id: &str, api_key: &str) -> Result<(), String> {
@@ -286,6 +300,7 @@ pub fn get_api_key(provider_id: &str) -> Result<String, String> {
     match keys.get(provider_id) {
         None => Ok(String::new()),
         Some(blob) => {
+            let blob: &str = blob.as_str();
             // Current format — normal decrypt
             if blob.starts_with(ENC_PREFIX) {
                 return decrypt_value(blob);
@@ -297,7 +312,7 @@ pub fn get_api_key(provider_id: &str) -> Result<String, String> {
                 return Ok(plaintext);
             }
             // Plaintext (pre-encryption era) — re-encrypt transparently
-            let plaintext = blob.clone();
+            let plaintext = blob.to_string();
             let _ = set_api_key(provider_id, &plaintext);
             Ok(plaintext)
         }
@@ -306,21 +321,18 @@ pub fn get_api_key(provider_id: &str) -> Result<String, String> {
 
 // Model management — models are stored inline inside each ProviderConfig.
 pub fn save_models(provider_id: &str, models: &[ModelConfig]) -> Result<(), String> {
-    let path = providers_config_path();
-    let mut providers = load_all_providers()?;
-    if let Some(p) = providers.get_mut(provider_id) {
+    let mut list = load_all_providers_ordered()?;
+    if let Some(p) = list.iter_mut().find(|p| p.id == provider_id) {
         p.models = models.to_vec();
     }
-    let list: Vec<_> = providers.values().cloned().collect();
-    fs::write(&path, serde_json::to_string_pretty(&list).unwrap())
-        .map_err(|e| e.to_string())
+    write_providers(&list)
 }
 
 pub fn load_models(provider_id: &str) -> Result<Vec<ModelConfig>, String> {
-    let providers = load_all_providers()?;
-    Ok(providers
-        .get(provider_id)
-        .map(|p| p.models.clone())
+    Ok(load_all_providers_ordered()?
+        .into_iter()
+        .find(|p| p.id == provider_id)
+        .map(|p| p.models)
         .unwrap_or_default())
 }
 
