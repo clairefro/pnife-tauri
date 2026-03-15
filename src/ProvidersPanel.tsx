@@ -187,6 +187,18 @@ export default function ProvidersPanel() {
     Record<string, string>
   >({});
 
+  // ── Connection test ────────────────────────────────────────────────────────
+  interface TestResult {
+    ok: boolean;
+    model_id: string;
+    latency_ms: number;
+    error?: string;
+  }
+  const [testingConn, setTestingConn] = useState<Record<string, boolean>>({});
+  const [connResults, setConnResults] = useState<Record<string, TestResult>>(
+    {},
+  );
+
   const [showAddProvider, setShowAddProvider] = useState(false);
   const [providerForm, setProviderForm] =
     useState<ProviderForm>(BLANK_PROVIDER_FORM);
@@ -391,6 +403,33 @@ export default function ProvidersPanel() {
       setLocalModelFetchError((prev) => ({ ...prev, [providerId]: String(e) }));
     } finally {
       setFetchingLocalModels((prev) => ({ ...prev, [providerId]: false }));
+    }
+  };
+
+  // ── Test connection ────────────────────────────────────────────────────────
+
+  const handleTestConnection = async (providerId: string) => {
+    setTestingConn((prev) => ({ ...prev, [providerId]: true }));
+    setConnResults((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
+    try {
+      const result = await invoke<{
+        ok: boolean;
+        model_id: string;
+        latency_ms: number;
+        error?: string;
+      }>("test_connection", { providerId });
+      setConnResults((prev) => ({ ...prev, [providerId]: result }));
+    } catch (e) {
+      setConnResults((prev) => ({
+        ...prev,
+        [providerId]: { ok: false, model_id: "", latency_ms: 0, error: String(e) },
+      }));
+    } finally {
+      setTestingConn((prev) => ({ ...prev, [providerId]: false }));
     }
   };
 
@@ -812,6 +851,34 @@ export default function ProvidersPanel() {
                       >
                         Delete
                       </button>
+                    </div>
+
+                    <div className="card-test-row">
+                      <button
+                        className="btn-sm btn-test"
+                        disabled={
+                          testingConn[p.id] ||
+                          (models[p.id] ?? []).length === 0
+                        }
+                        title={
+                          (models[p.id] ?? []).length === 0
+                            ? "Add a model first"
+                            : "Send a test prompt"
+                        }
+                        onClick={() => handleTestConnection(p.id)}
+                      >
+                        {testingConn[p.id] ? "Testing…" : "Test"}
+                      </button>
+                      {connResults[p.id] && (
+                        <span
+                          className={`conn-result ${connResults[p.id].ok ? "conn-ok" : "conn-fail"}`}
+                          title={connResults[p.id].error ?? ""}
+                        >
+                          {connResults[p.id].ok
+                            ? `✓ ${connResults[p.id].latency_ms}ms`
+                            : `✗ ${connResults[p.id].error ?? "Failed"}`}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}

@@ -13,6 +13,7 @@ use crate::provider_manager::{
     DefaultSelection,
 };
 use crate::model::ModelConfig;
+use crate::ai_adapter::{AiResponse, TestResult};
 
 #[tauri::command]
 pub fn greet(name: &str) -> String {
@@ -123,4 +124,21 @@ pub fn fetch_local_models(provider_id: String) -> Result<Vec<String>, String> {
             t
         )),
     }
+}
+
+/// Send a prompt to the given provider + model and return the response with usage data.
+#[tauri::command]
+pub async fn ai_prompt(
+    provider_id: String,
+    model_id: String,
+    prompt: String,
+    system_prompt: Option<String>,
+) -> Result<AiResponse, String> {
+    crate::ai_adapter::run_prompt(&provider_id, &model_id, &prompt, system_prompt.as_deref()).await
+}
+
+/// Send a minimal probe prompt to verify connectivity for a provider + model.
+#[tauri::command]
+pub async fn test_connection(provider_id: String) -> Result<TestResult, String> {
+    crate::ai_adapter::run_test(&provider_id).await
 }

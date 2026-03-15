@@ -535,6 +535,36 @@
   padding-top: 0.5rem;
 }
 
+/* ── Connection test row ─────────────────────────────────────── */
+
+.card-test-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-top: 0.3rem;
+}
+
+.btn-test {
+  flex-shrink: 0;
+}
+
+.conn-result {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.conn-ok {
+  color: #4ec994;
+}
+
+.conn-fail {
+  color: #e06c75;
+}
+
 /* ── Confirm delete modal ────────────────────────────────────── */
 
 .confirm-overlay {

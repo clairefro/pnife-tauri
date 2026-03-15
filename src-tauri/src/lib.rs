@@ -2,6 +2,7 @@ pub mod provider_config;
 pub mod provider_manager;
 pub mod model;
 pub mod commands;
+pub mod ai_adapter;
 
 use serde::{ Deserialize, Serialize };
 use std::fs;
@@ -118,7 +119,9 @@ pub fn run() {
                 commands::get_default_provider_model,
                 commands::set_default_provider_model,
                 commands::clear_default_provider_model,
-                commands::fetch_local_models
+                commands::fetch_local_models,
+                commands::ai_prompt,
+                commands::test_connection
             ]
         )
         .run(tauri::generate_context!())
