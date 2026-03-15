@@ -18,9 +18,11 @@ function makeKey() {
   return Math.random().toString(36).slice(2);
 }
 
-function blankStep(type: "ai_prompt" | "regex_replace"): DraftStep {
+function blankStep(type: "ai_prompt" | "regex_replace", id: string): DraftStep {
   return {
     _key: makeKey(),
+    id,
+    name: "",
     type,
     prompt: type === "ai_prompt" ? "" : undefined,
     pattern: type === "regex_replace" ? "" : undefined,
@@ -53,8 +55,9 @@ export default function ToolEditor({
   const dragOverIndex = useRef<number | null>(null);
 
   // ---------- step mutations ----------
-  const addStep = (type: "ai_prompt" | "regex_replace") => {
-    setSteps((prev) => [...prev, blankStep(type)]);
+  const addStep = async (type: "ai_prompt" | "regex_replace") => {
+    const id = await invoke<string>("generate_id", { prefix: "step" });
+    setSteps((prev) => [...prev, blankStep(type, id)]);
   };
 
   const removeStep = (idx: number) => {
@@ -97,8 +100,10 @@ export default function ToolEditor({
       return;
     }
     const cleanSteps: ToolStep[] = steps.map(({ _key, ...rest }) => rest);
+    const toolId =
+      tool?.id || (await invoke<string>("generate_id", { prefix: "tool" }));
     const result: Tool = {
-      id: tool?.id ?? `tool_${Date.now()}`,
+      id: toolId,
       name: name.trim(),
       description: description.trim(),
       steps: cleanSteps,
@@ -215,14 +220,20 @@ export default function ToolEditor({
           <div
             key={step._key}
             className="step-card"
-            draggable
-            onDragStart={() => handleDragStart(idx)}
             onDragEnter={() => handleDragEnter(idx)}
-            onDragEnd={handleDragEnd}
             onDragOver={(e) => e.preventDefault()}
           >
             <div className="step-card-header">
-              <span className="drag-handle" title="Drag to reorder">
+              <span
+                className="drag-handle"
+                title="Drag to reorder"
+                draggable
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  handleDragStart(idx);
+                }}
+                onDragEnd={handleDragEnd}
+              >
                 ⠿
               </span>
               <span className={`step-type-badge step-type-${step.type}`}>
@@ -236,6 +247,16 @@ export default function ToolEditor({
               >
                 ✕
               </button>
+            </div>
+            <div className="step-field">
+              <label className="field-label">Step Name</label>
+              <input
+                className="field-input"
+                value={step.name}
+                onChange={(e) => updateStep(idx, { name: e.target.value })}
+                placeholder={`Step ${idx + 1} name (optional)`}
+                maxLength={80}
+              />
             </div>
 
             {step.type === "ai_prompt" && (

@@ -131,6 +131,9 @@ export default function ToolPipelineView({
                 hasResult={!!result}
               />
               <span className="step-type-badge">{step.type}</span>
+              {step.name && (
+                <span className="step-name-label">{step.name}</span>
+              )}
               <span className="step-prompt-label">{stepLabel(step)}</span>
             </div>
 

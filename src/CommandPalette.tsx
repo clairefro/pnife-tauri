@@ -10,6 +10,8 @@ import { invoke } from "@tauri-apps/api/core";
 import "./CommandPalette.css";
 
 export interface ToolStep {
+  id: string;
+  name: string;
   type: string;
   prompt?: string;
   pattern?: string;

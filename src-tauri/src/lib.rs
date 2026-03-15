@@ -126,7 +126,8 @@ pub fn run() {
                 commands::list_tools,
                 commands::run_tool_step,
                 commands::save_tool,
-                commands::delete_tool
+                commands::delete_tool,
+                commands::generate_id
             ]
         )
         .run(tauri::generate_context!())

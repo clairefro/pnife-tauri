@@ -1,12 +1,89 @@
 [
   {
-    "id": "summarize",
+    "id": "tool_Summarize001",
     "name": "Summarize",
-    "description": "Summarize the following text",
+    "description": "Summarize selected text.",
+    "shortcut": "S",
     "steps": [
       {
+        "id": "step_SummarizeS01",
+        "name": "Summarize",
         "type": "ai_prompt",
-        "prompt": "Summarize the following text"
+        "prompt": "Summarize the following text.",
+        "pattern": null,
+        "replacement": null
+      },
+      {
+        "id": "step_TranslateJ01",
+        "name": "Translate to Japanese",
+        "type": "ai_prompt",
+        "prompt": "Translate to Japanese.",
+        "pattern": null,
+        "replacement": null
+      }
+    ]
+  },
+  {
+    "id": "tool_FixGrammar01",
+    "name": "Fix Grammar",
+    "description": "Clean up spelling and grammar.",
+    "shortcut": "G",
+    "steps": [
+      {
+        "id": "step_FixGrammar01",
+        "name": "Fix Grammar",
+        "type": "ai_prompt",
+        "prompt": "Fix grammar and spelling without changing meaning.",
+        "pattern": null,
+        "replacement": null
+      }
+    ]
+  },
+  {
+    "id": "tool_LogicFallac1",
+    "name": "Logical Fallacies",
+    "description": "Detect logical fallacies in text.",
+    "shortcut": null,
+    "steps": [
+      {
+        "id": "step_FallacyExt01",
+        "name": "Extract Fallacies",
+        "type": "ai_prompt",
+        "prompt": "Identify logical fallacies in the text and return as plain JSON array.\n[\n {\n  \"name\": \"red-herring\",\n  \"confidence_score\": 0.813\n }\n]\n",
+        "pattern": null,
+        "replacement": null
+      }
+    ]
+  },
+  {
+    "id": "tool_ExtractGram1",
+    "name": "Extract Grammar",
+    "description": "",
+    "shortcut": null,
+    "steps": [
+      {
+        "id": "step_GrammarExt01",
+        "name": "Extract Grammar",
+        "type": "ai_prompt",
+        "prompt": "I'm learning the language in the passage below. For each sentence in the passage, break it down into a table word-by-word, showing the original text, romanization (only if orginal script is not latin alphabet), literal translation, and grammar notes explaining derivation of part of speech or cultural notes . Be sure to romanize numerals if present\n\nThen provide a full translation of the passage \n\nThen extract key grammar points with mini grammar lessons\n\nThen extract a list of key vocab from the passage that can be used later for spaced repitition\n\n",
+        "pattern": null,
+        "replacement": null
+      }
+    ]
+  },
+  {
+    "id": "tool_TranslateJp1",
+    "name": "Translate to Japanese",
+    "description": "",
+    "shortcut": null,
+    "steps": [
+      {
+        "id": "step_TranslateJp1",
+        "name": "Translate",
+        "type": "ai_prompt",
+        "prompt": "translate to japanese",
+        "pattern": null,
+        "replacement": null
       }
     ]
   }

@@ -139,6 +139,13 @@
   background: var(--color-accent);
   color: #000;
   border-color: var(--color-accent);
+  gap: 0.4em;
+}
+
+.btn-hotkey {
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.65;
 }
 
 .btn-run:hover:not(:disabled) {

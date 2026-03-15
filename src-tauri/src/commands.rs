@@ -1,3 +1,4 @@
+use rand::Rng;
 use crate::provider_config::{ProviderConfig, ProviderType};
 use crate::provider_manager::
 {
@@ -146,6 +147,10 @@ pub async fn test_connection(provider_id: String, model_id: String) -> Result<Te
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ToolStepConfig {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
     pub r#type: String,
     pub prompt: Option<String>,
     pub pattern: Option<String>,
@@ -186,6 +191,22 @@ fn save_tools_vec(tools: &[ToolConfig]) -> Result<(), String> {
     std::fs::write(&path, data).map_err(|e| e.to_string())
 }
 
+const ID_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+pub fn make_id(prefix: &str) -> String {
+    let mut rng = rand::thread_rng();
+    let suffix: String = (0..12)
+        .map(|_| ID_CHARS[rng.gen_range(0..62)] as char)
+        .collect();
+    format!("{}_{}", prefix, suffix)
+}
+
+/// Generate a prefixed short random ID (e.g. "tool_aB3xK9mNpQ2r").
+#[tauri::command]
+pub fn generate_id(prefix: String) -> String {
+    make_id(&prefix)
+}
+
 /// List tools from ~/.config/pnife/tools.json (or platform equivalent).
 #[tauri::command]
 pub fn list_tools() -> Result<Vec<ToolConfig>, String> {
@@ -193,8 +214,17 @@ pub fn list_tools() -> Result<Vec<ToolConfig>, String> {
 }
 
 /// Upsert a tool (insert or update by id) in tools.json.
+/// Backfills missing ids so CLI usage can omit them.
 #[tauri::command]
-pub fn save_tool(tool: ToolConfig) -> Result<(), String> {
+pub fn save_tool(mut tool: ToolConfig) -> Result<(), String> {
+    if tool.id.is_empty() {
+        tool.id = make_id("tool");
+    }
+    for step in &mut tool.steps {
+        if step.id.is_empty() {
+            step.id = make_id("step");
+        }
+    }
     let mut tools = load_tools_vec()?;
     if let Some(pos) = tools.iter().position(|t| t.id == tool.id) {
         tools[pos] = tool;
@@ -214,6 +244,10 @@ pub fn delete_tool(tool_id: String) -> Result<(), String> {
 
 #[derive(serde::Deserialize)]
 pub struct ToolStep {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
     pub r#type: String,
     pub prompt: Option<String>,
     pub pattern: Option<String>,

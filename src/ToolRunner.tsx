@@ -23,6 +23,8 @@ interface Props {
 }
 
 export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
+  const isMac = navigator.platform.toUpperCase().includes("MAC");
+  const runHotkey = isMac ? "⌘↵" : "Ctrl+↵";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [input, setInput] = useState(SAMPLE_INPUT);
   const [stepResults, setStepResults] = useState<(StepResult | null)[]>([]);
@@ -129,7 +131,7 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
           </button>
           {running ? (
             <button className="btn-stop" onClick={handleStop}>
-              ■ Stop
+              ■ Stop <span className="btn-hotkey">Esc</span>
             </button>
           ) : (
             <button
@@ -137,7 +139,7 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
               onClick={handleRun}
               disabled={!input.trim()}
             >
-              ▶ Run
+              ▶ Run <span className="btn-hotkey">{runHotkey}</span>
             </button>
           )}
         </div>
