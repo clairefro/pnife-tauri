@@ -1,13 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import CommandPalette, { Tool } from "./CommandPalette";
-import ProvidersPanel from "./ProvidersPanel";
+import ProvidersPanel, { DefaultSelection } from "./ProvidersPanel";
 import "./App.css";
 
 type Tab = "tools" | "providers";
 
+function StatusBar({
+  defaultSelection,
+  onSetUpClick,
+}: {
+  defaultSelection: DefaultSelection | null;
+  onSetUpClick: () => void;
+}) {
+  return (
+    <div className="status-bar">
+      {defaultSelection ? (
+        <span className="status-default">
+          Default: {defaultSelection.provider_id} / {defaultSelection.model_id}
+        </span>
+      ) : (
+        <span className="status-no-default">
+          ⚠ No default model configured.{" "}
+          <button className="status-link" onClick={onSetUpClick}>
+            Set up
+          </button>
+        </span>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [tab, setTab] = useState<Tab>("tools");
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [defaultSelection, setDefaultSelection] =
+    useState<DefaultSelection | null>(null);
+
+  useEffect(() => {
+    invoke<DefaultSelection | null>("get_default_provider_model")
+      .then(setDefaultSelection)
+      .catch(console.error);
+  }, []);
 
   return (
     <main className="container">
@@ -42,7 +76,17 @@ function App() {
         </>
       )}
 
-      {tab === "providers" && <ProvidersPanel />}
+      {tab === "providers" && (
+        <ProvidersPanel
+          defaultSelection={defaultSelection}
+          onDefaultSelectionChange={setDefaultSelection}
+        />
+      )}
+
+      <StatusBar
+        defaultSelection={defaultSelection}
+        onSetUpClick={() => setTab("providers")}
+      />
     </main>
   );
 }

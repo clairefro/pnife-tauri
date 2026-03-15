@@ -25,7 +25,7 @@ interface ModelConfig {
   is_default: boolean;
 }
 
-interface DefaultSelection {
+export interface DefaultSelection {
   provider_id: string;
   model_id: string;
 }
@@ -171,11 +171,17 @@ const BLANK_MODEL_FORM: ModelForm = {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ProvidersPanel() {
+interface ProvidersPanelProps {
+  defaultSelection: DefaultSelection | null;
+  onDefaultSelectionChange: (sel: DefaultSelection | null) => void;
+}
+
+export default function ProvidersPanel({
+  defaultSelection,
+  onDefaultSelectionChange,
+}: ProvidersPanelProps) {
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   const [models, setModels] = useState<Record<string, ModelConfig[]>>({});
-  const [defaultSelection, setDefaultSelection] =
-    useState<DefaultSelection | null>(null);
   const [apiKeyStatuses, setApiKeyStatuses] = useState<
     Record<string, boolean | null>
   >({});
@@ -257,6 +263,7 @@ export default function ProvidersPanel() {
           ]
         : list;
       setProviders(sorted);
+      onDefaultSelectionChange(sel);
       // Test API key status for each
       const statuses: Record<string, boolean | null> = {};
       await Promise.all(
@@ -287,21 +294,9 @@ export default function ProvidersPanel() {
     }
   }, []);
 
-  const loadDefaultSelection = useCallback(async () => {
-    try {
-      const sel = await invoke<DefaultSelection | null>(
-        "get_default_provider_model",
-      );
-      setDefaultSelection(sel);
-    } catch (e) {
-      console.error("Failed to load default selection:", e);
-    }
-  }, []);
-
   useEffect(() => {
     loadProviders();
-    loadDefaultSelection();
-  }, [loadProviders, loadDefaultSelection]);
+  }, [loadProviders]);
 
   // ── Set default provider+model ──────────────────────────────────────────────
 
@@ -312,10 +307,13 @@ export default function ProvidersPanel() {
     try {
       if (isCurrent) {
         await invoke("clear_default_provider_model");
-        setDefaultSelection(null);
+        onDefaultSelectionChange(null);
       } else {
         await invoke("set_default_provider_model", { providerId, modelId });
-        setDefaultSelection({ provider_id: providerId, model_id: modelId });
+        onDefaultSelectionChange({
+          provider_id: providerId,
+          model_id: modelId,
+        });
       }
     } catch (e) {
       console.error("Failed to set default:", e);
@@ -392,7 +390,7 @@ export default function ProvidersPanel() {
       await invoke("delete_provider", { providerId });
       if (defaultSelection?.provider_id === providerId) {
         await invoke("clear_default_provider_model");
-        setDefaultSelection(null);
+        onDefaultSelectionChange(null);
       }
       await loadProviders();
       setModels((prev) => {

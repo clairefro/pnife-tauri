@@ -37,6 +37,7 @@
 .container {
   margin: 0;
   min-height: 100vh;
+  padding-bottom: 26px; /* room for fixed status bar */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,6 +95,48 @@
   background: var(--color-accent);
   color: #fff;
   font-weight: 600;
+}
+
+/* ── Status bar ──────────────────────────────────────── */
+
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: #111214;
+  border-top: 1px solid #23242a;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 100;
+}
+
+.status-default {
+  font-size: 0.75rem;
+  color: #666878;
+  font-family: monospace;
+  letter-spacing: 0.01em;
+}
+
+.status-no-default {
+  font-size: 0.75rem;
+  color: #e06c75;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.status-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
 }
 
 .tool-details {
