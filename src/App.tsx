@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import CommandPalette, { Tool } from "./CommandPalette";
+import CommandPalette, { Tool, CommandPaletteHandle } from "./CommandPalette";
 import ProvidersPanel, { DefaultSelection } from "./ProvidersPanel";
 import ToolRunner from "./ToolRunner";
 import "./App.css";
@@ -37,6 +37,11 @@ function App() {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [defaultSelection, setDefaultSelection] =
     useState<DefaultSelection | null>(null);
+  const cmdRef = useRef<CommandPaletteHandle>(null);
+  const handleBack = () => {
+    setSelectedTool(null);
+    cmdRef.current?.focus();
+  };
 
   useEffect(() => {
     invoke<DefaultSelection | null>("get_default_provider_model")
@@ -66,8 +71,10 @@ function App() {
 
       {tab === "tools" && (
         <>
-          <CommandPalette onSelect={setSelectedTool} />
-          {selectedTool && <ToolRunner tool={selectedTool} />}
+          <CommandPalette ref={cmdRef} onSelect={setSelectedTool} />
+          {selectedTool && (
+            <ToolRunner tool={selectedTool} onBack={handleBack} />
+          )}
         </>
       )}
 

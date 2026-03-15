@@ -50,7 +50,8 @@
   background: #191a1e;
 }
 .command-list li:hover,
-.command-list li:focus {
+.command-list li:focus,
+.command-list li.highlighted {
   background: #23242a;
   border: 1.5px solid #4f8cff;
 }

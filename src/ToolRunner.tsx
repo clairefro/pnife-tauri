@@ -17,9 +17,10 @@ const SAMPLE_INPUT =
 
 interface Props {
   tool: Tool;
+  onBack: () => void;
 }
 
-export default function ToolRunner({ tool }: Props) {
+export default function ToolRunner({ tool, onBack }: Props) {
   const [input, setInput] = useState(SAMPLE_INPUT);
   const [stepResults, setStepResults] = useState<(StepResult | null)[]>([]);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
@@ -27,8 +28,9 @@ export default function ToolRunner({ tool }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [totalElapsedMs, setTotalElapsedMs] = useState<number | null>(null);
   const cancelledRef = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Reset pipeline state when user switches to a different tool
+  // Reset pipeline state and focus input when tool changes
   useEffect(() => {
     cancelledRef.current = true;
     setRunning(false);
@@ -36,6 +38,7 @@ export default function ToolRunner({ tool }: Props) {
     setCurrentStep(null);
     setTotalElapsedMs(null);
     setError(null);
+    setTimeout(() => textareaRef.current?.focus(), 50);
   }, [tool.id]);
 
   const handleRun = async () => {
@@ -113,11 +116,22 @@ export default function ToolRunner({ tool }: Props) {
         <div className="tool-runner-pane">
           <label className="pane-label">Input</label>
           <textarea
+            ref={textareaRef}
             className="tool-runner-textarea"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Enter input text…"
             spellCheck={false}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                if (!running && input.trim()) handleRun();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                if (running) handleStop();
+                else onBack();
+              }
+            }}
           />
         </div>
 

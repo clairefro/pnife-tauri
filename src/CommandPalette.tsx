@@ -1,4 +1,11 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+  KeyboardEvent,
+} from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./CommandPalette.css";
 
@@ -17,14 +24,24 @@ export interface Tool {
   steps: ToolStep[];
 }
 
-export default function CommandPalette({
-  onSelect,
-}: {
-  onSelect: (tool: Tool) => void;
-}) {
+export interface CommandPaletteHandle {
+  focus: () => void;
+}
+
+const CommandPalette = forwardRef<
+  CommandPaletteHandle,
+  { onSelect: (tool: Tool) => void }
+>(function CommandPalette({ onSelect }, ref) {
   const [query, setQuery] = useState("");
   const [allTools, setAllTools] = useState<Tool[]>([]);
   const [filtered, setFiltered] = useState<Tool[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }));
 
   useEffect(() => {
     invoke<Tool[]>("list_tools").then(setAllTools).catch(console.error);
@@ -39,20 +56,51 @@ export default function CommandPalette({
           tool.description.toLowerCase().includes(q),
       ),
     );
+    setHighlightedIndex(0);
   }, [query, allTools]);
+
+  useEffect(() => {
+    itemRefs.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
+  }, [highlightedIndex]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered[highlightedIndex]) onSelect(filtered[highlightedIndex]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setQuery("");
+    }
+  };
 
   return (
     <div className="command-palette">
       <input
+        ref={inputRef}
         autoFocus
         className="command-input"
         placeholder="Search tools..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
       <ul className="command-list">
-        {filtered.map((tool) => (
-          <li key={tool.id} onClick={() => onSelect(tool)}>
+        {filtered.map((tool, i) => (
+          <li
+            key={tool.id}
+            ref={(el) => {
+              itemRefs.current[i] = el;
+            }}
+            className={i === highlightedIndex ? "highlighted" : ""}
+            onClick={() => onSelect(tool)}
+            onMouseEnter={() => setHighlightedIndex(i)}
+          >
             <strong>{tool.name}</strong>
             <div className="desc">{tool.description}</div>
           </li>
@@ -61,4 +109,6 @@ export default function CommandPalette({
       </ul>
     </div>
   );
-}
+});
+
+export default CommandPalette;

@@ -38,7 +38,8 @@ function StepStatusIcon({
   hasResult: boolean;
 }) {
   if (hasResult) return <span className="step-status done">✓</span>;
-  if (currentStep === index) return <span className="step-status running">◉</span>;
+  if (currentStep === index)
+    return <span className="step-status running">◉</span>;
   return <span className="step-status pending">○</span>;
 }
 
@@ -51,7 +52,11 @@ function CopyButton({ text }: { text: string }) {
     });
   };
   return (
-    <button className={`copy-btn${copied ? " copied" : ""}`} onClick={handleCopy} title="Copy output">
+    <button
+      className={`copy-btn${copied ? " copied" : ""}`}
+      onClick={handleCopy}
+      title="Copy output"
+    >
       {copied ? "✓" : "⎘"}
     </button>
   );
