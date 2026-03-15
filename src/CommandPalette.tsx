@@ -30,8 +30,8 @@ export interface CommandPaletteHandle {
 
 const CommandPalette = forwardRef<
   CommandPaletteHandle,
-  { onSelect: (tool: Tool) => void }
->(function CommandPalette({ onSelect }, ref) {
+  { onSelect: (tool: Tool) => void; onAddTool: () => void }
+>(function CommandPalette({ onSelect, onAddTool }, ref) {
   const [query, setQuery] = useState("");
   const [allTools, setAllTools] = useState<Tool[]>([]);
   const [filtered, setFiltered] = useState<Tool[]>([]);
@@ -107,6 +107,9 @@ const CommandPalette = forwardRef<
         ))}
         {filtered.length === 0 && <li className="empty">No tools found</li>}
       </ul>
+      <button className="add-tool-btn" onClick={onAddTool}>
+        + Add Tool
+      </button>
     </div>
   );
 });

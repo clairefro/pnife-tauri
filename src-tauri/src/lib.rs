@@ -124,7 +124,9 @@ pub fn run() {
                 commands::test_connection,
                 commands::run_tool,
                 commands::list_tools,
-                commands::run_tool_step
+                commands::run_tool_step,
+                commands::save_tool,
+                commands::delete_tool
             ]
         )
         .run(tauri::generate_context!())

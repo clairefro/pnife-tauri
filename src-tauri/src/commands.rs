@@ -162,16 +162,54 @@ pub struct ToolConfig {
     pub steps: Vec<ToolStepConfig>,
 }
 
-/// List tools from ~/.config/pnife/tools.json (or platform equivalent).
-#[tauri::command]
-pub fn list_tools() -> Result<Vec<ToolConfig>, String> {
+fn tools_config_path() -> std::path::PathBuf {
     let mut path = crate::provider_config::providers_config_path();
     path.set_file_name("tools.json");
+    path
+}
+
+fn load_tools_vec() -> Result<Vec<ToolConfig>, String> {
+    let path = tools_config_path();
     if !path.exists() {
         return Ok(vec![]);
     }
     let data = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
     serde_json::from_str(&data).map_err(|e| e.to_string())
+}
+
+fn save_tools_vec(tools: &[ToolConfig]) -> Result<(), String> {
+    let path = tools_config_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let data = serde_json::to_string_pretty(tools).map_err(|e| e.to_string())?;
+    std::fs::write(&path, data).map_err(|e| e.to_string())
+}
+
+/// List tools from ~/.config/pnife/tools.json (or platform equivalent).
+#[tauri::command]
+pub fn list_tools() -> Result<Vec<ToolConfig>, String> {
+    load_tools_vec()
+}
+
+/// Upsert a tool (insert or update by id) in tools.json.
+#[tauri::command]
+pub fn save_tool(tool: ToolConfig) -> Result<(), String> {
+    let mut tools = load_tools_vec()?;
+    if let Some(pos) = tools.iter().position(|t| t.id == tool.id) {
+        tools[pos] = tool;
+    } else {
+        tools.push(tool);
+    }
+    save_tools_vec(&tools)
+}
+
+/// Delete a tool by id from tools.json.
+#[tauri::command]
+pub fn delete_tool(tool_id: String) -> Result<(), String> {
+    let mut tools = load_tools_vec()?;
+    tools.retain(|t| t.id != tool_id);
+    save_tools_vec(&tools)
 }
 
 #[derive(serde::Deserialize)]

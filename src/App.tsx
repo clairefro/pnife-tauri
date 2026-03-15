@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import CommandPalette, { Tool, CommandPaletteHandle } from "./CommandPalette";
 import ProvidersPanel, { DefaultSelection } from "./ProvidersPanel";
 import ToolRunner from "./ToolRunner";
+import ToolEditor from "./ToolEditor";
 import "./App.css";
 
 type Tab = "tools" | "providers";
@@ -35,12 +36,30 @@ function StatusBar({
 function App() {
   const [tab, setTab] = useState<Tab>("tools");
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [editingTool, setEditingTool] = useState<Tool | null | "new">(null);
   const [defaultSelection, setDefaultSelection] =
     useState<DefaultSelection | null>(null);
   const cmdRef = useRef<CommandPaletteHandle>(null);
+
   const handleBack = () => {
     setSelectedTool(null);
     cmdRef.current?.focus();
+  };
+
+  const handleEditSave = (saved: Tool) => {
+    // If we were editing the currently selected tool, refresh it
+    if (selectedTool && saved.id === selectedTool.id) {
+      setSelectedTool(saved);
+    }
+    setEditingTool(null);
+    // Re-focus palette if returning to the tool list without a selection
+    if (!selectedTool || saved.id !== selectedTool?.id) {
+      setSelectedTool(saved);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingTool(null);
   };
 
   useEffect(() => {
@@ -71,9 +90,27 @@ function App() {
 
       {tab === "tools" && (
         <>
-          <CommandPalette ref={cmdRef} onSelect={setSelectedTool} />
-          {selectedTool && (
-            <ToolRunner tool={selectedTool} onBack={handleBack} />
+          {editingTool !== null ? (
+            <ToolEditor
+              tool={editingTool === "new" ? undefined : editingTool}
+              onSave={handleEditSave}
+              onCancel={handleEditCancel}
+            />
+          ) : (
+            <>
+              <CommandPalette
+                ref={cmdRef}
+                onSelect={setSelectedTool}
+                onAddTool={() => setEditingTool("new")}
+              />
+              {selectedTool && (
+                <ToolRunner
+                  tool={selectedTool}
+                  onBack={handleBack}
+                  onEdit={() => setEditingTool(selectedTool)}
+                />
+              )}
+            </>
           )}
         </>
       )}

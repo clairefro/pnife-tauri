@@ -18,9 +18,10 @@ const SAMPLE_INPUT =
 interface Props {
   tool: Tool;
   onBack: () => void;
+  onEdit: () => void;
 }
 
-export default function ToolRunner({ tool, onBack }: Props) {
+export default function ToolRunner({ tool, onBack, onEdit }: Props) {
   const [input, setInput] = useState(SAMPLE_INPUT);
   const [stepResults, setStepResults] = useState<(StepResult | null)[]>([]);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
@@ -97,19 +98,24 @@ export default function ToolRunner({ tool, onBack }: Props) {
           <span className="tool-runner-name">{tool.name}</span>
           <span className="tool-runner-desc">{tool.description}</span>
         </div>
-        {running ? (
-          <button className="btn-stop" onClick={handleStop}>
-            ■ Stop
+        <div className="tool-runner-actions">
+          <button className="btn-edit" onClick={onEdit} disabled={running}>
+            ✎ Edit
           </button>
-        ) : (
-          <button
-            className="btn-run"
-            onClick={handleRun}
-            disabled={!input.trim()}
-          >
-            ▶ Run
-          </button>
-        )}
+          {running ? (
+            <button className="btn-stop" onClick={handleStop}>
+              ■ Stop
+            </button>
+          ) : (
+            <button
+              className="btn-run"
+              onClick={handleRun}
+              disabled={!input.trim()}
+            >
+              ▶ Run
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="tool-runner-body">
