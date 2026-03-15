@@ -108,6 +108,101 @@
   line-height: 1.55;
 }
 
+/* When rendering markdown, disable pre-wrap so the MD content flows normally */
+.step-output.step-output-md {
+  white-space: normal;
+}
+
+.step-output.step-output-md p {
+  margin: 0 0 0.4em;
+}
+
+.step-output.step-output-md p:last-child {
+  margin-bottom: 0;
+}
+
+.step-output.step-output-md h1,
+.step-output.step-output-md h2,
+.step-output.step-output-md h3,
+.step-output.step-output-md h4 {
+  margin: 0.5em 0 0.2em;
+  font-size: 0.82rem;
+  color: var(--color-text);
+}
+
+.step-output.step-output-md code {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75em;
+  background: var(--color-bg);
+  padding: 0.1em 0.3em;
+  border-radius: 2px;
+  border: 1px solid var(--color-border-bright);
+}
+
+.step-output.step-output-md pre {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.4em 0.6em;
+  overflow-x: auto;
+  margin: 0.3em 0;
+}
+
+.step-output.step-output-md pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.step-output.step-output-md ul,
+.step-output.step-output-md ol {
+  margin: 0.2em 0 0.4em 1.2em;
+  padding: 0;
+}
+
+.step-output.step-output-md li {
+  margin-bottom: 0.15em;
+}
+
+.step-output.step-output-md blockquote {
+  margin: 0.3em 0;
+  padding: 0.2em 0.6em;
+  border-left: 2px solid var(--color-accent);
+  color: var(--color-text-secondary);
+}
+
+.step-output.step-output-md table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.75rem;
+  margin: 0.4em 0;
+}
+
+.step-output.step-output-md th,
+.step-output.step-output-md td {
+  border: 1px solid var(--color-border-bright);
+  padding: 0.25em 0.5em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.step-output.step-output-md th {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.step-output.step-output-md tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.step-output-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 .step-meta {
   display: flex;
   gap: 0.8rem;
@@ -147,6 +242,36 @@
 .copy-btn.copied {
   color: var(--color-ok);
   border-color: var(--color-ok);
+}
+
+.md-toggle {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  color: var(--color-text-secondary);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.15em 0.3em;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
+.md-toggle.on {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-dim);
+}
+
+.md-toggle:hover:not(.on) {
+  color: var(--color-text);
+  border-color: var(--color-border-bright);
 }
 
 /* ── Summary footer ────────────────────────────────────────────────── */

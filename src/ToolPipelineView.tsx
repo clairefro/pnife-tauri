@@ -1,4 +1,6 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./ToolPipelineView.css";
 import { ToolStep } from "./CommandPalette";
 
@@ -62,6 +64,41 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+function MdToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      className={`md-toggle${on ? " on" : ""}`}
+      onClick={onToggle}
+      title={
+        on
+          ? "Showing rendered markdown — click for raw text"
+          : "Showing raw text — click to render markdown"
+      }
+    >
+      MD
+    </button>
+  );
+}
+
+function StepOutput({ text }: { text: string }) {
+  const [md, setMd] = useState(true);
+  return (
+    <div className="step-output-row">
+      <div className={`step-output${md ? " step-output-md" : ""}`}>
+        {md ? (
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        ) : (
+          text
+        )}
+      </div>
+      <div className="step-output-actions">
+        <MdToggle on={md} onToggle={() => setMd((v) => !v)} />
+        <CopyButton text={text} />
+      </div>
+    </div>
+  );
+}
+
 export default function ToolPipelineView({
   steps,
   results,
@@ -105,10 +142,7 @@ export default function ToolPipelineView({
 
             {result && (
               <div className="pipeline-step-body">
-                <div className="step-output-row">
-                  <div className="step-output">{result.output}</div>
-                  <CopyButton text={result.output} />
-                </div>
+                <StepOutput text={result.output} />
                 <div className="step-meta">
                   {result.total_tokens != null && result.total_tokens > 0 && (
                     <span>{result.total_tokens} tokens</span>

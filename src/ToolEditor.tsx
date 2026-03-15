@@ -7,6 +7,7 @@ interface Props {
   tool?: Tool; // undefined = new tool
   onSave: (tool: Tool) => void;
   onCancel: () => void;
+  onDelete?: () => void; // only for editing existing tools
 }
 
 interface DraftStep extends ToolStep {
@@ -31,8 +32,14 @@ function toolToDraft(tool: Tool): DraftStep[] {
   return tool.steps.map((s) => ({ ...s, _key: makeKey() }));
 }
 
-export default function ToolEditor({ tool, onSave, onCancel }: Props) {
+export default function ToolEditor({
+  tool,
+  onSave,
+  onCancel,
+  onDelete,
+}: Props) {
   const isNew = !tool;
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(tool?.name ?? "");
   const [description, setDescription] = useState(tool?.description ?? "");
   const [steps, setSteps] = useState<DraftStep[]>(
@@ -114,6 +121,36 @@ export default function ToolEditor({ tool, onSave, onCancel }: Props) {
           {isNew ? "New Tool" : `Edit: ${tool.name}`}
         </span>
         <div className="tool-editor-header-actions">
+          {!isNew &&
+            onDelete &&
+            (confirmDelete ? (
+              <>
+                <span className="confirm-label">Delete?</span>
+                <button
+                  className="btn-confirm-delete"
+                  onClick={onDelete}
+                  disabled={saving}
+                >
+                  Yes
+                </button>
+                <button
+                  className="btn-cancel-inline"
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={saving}
+                >
+                  No
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn-delete"
+                onClick={() => setConfirmDelete(true)}
+                disabled={saving}
+                title="Delete tool"
+              >
+                Delete
+              </button>
+            ))}
           <button className="btn-cancel" onClick={onCancel} disabled={saving}>
             Cancel
           </button>

@@ -19,9 +19,11 @@ interface Props {
   tool: Tool;
   onBack: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function ToolRunner({ tool, onBack, onEdit }: Props) {
+export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [input, setInput] = useState(SAMPLE_INPUT);
   const [stepResults, setStepResults] = useState<(StepResult | null)[]>([]);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
@@ -99,6 +101,29 @@ export default function ToolRunner({ tool, onBack, onEdit }: Props) {
           <span className="tool-runner-desc">{tool.description}</span>
         </div>
         <div className="tool-runner-actions">
+          {confirmDelete ? (
+            <>
+              <span className="confirm-label">Delete?</span>
+              <button className="btn-confirm-delete" onClick={onDelete}>
+                Yes
+              </button>
+              <button
+                className="btn-cancel-inline"
+                onClick={() => setConfirmDelete(false)}
+              >
+                No
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn-delete"
+              onClick={() => setConfirmDelete(true)}
+              disabled={running}
+              title="Delete tool"
+            >
+              Delete
+            </button>
+          )}
           <button className="btn-edit" onClick={onEdit} disabled={running}>
             ✎ Edit
           </button>

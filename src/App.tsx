@@ -62,6 +62,14 @@ function App() {
     setEditingTool(null);
   };
 
+  const handleDeleteTool = (id: string) => {
+    invoke("delete_tool", { toolId: id })
+      .then(() => cmdRef.current?.reload())
+      .catch(console.error);
+    if (selectedTool?.id === id) setSelectedTool(null);
+    if (editingTool !== "new" && editingTool?.id === id) setEditingTool(null);
+  };
+
   useEffect(() => {
     invoke<DefaultSelection | null>("get_default_provider_model")
       .then(setDefaultSelection)
@@ -95,6 +103,11 @@ function App() {
               tool={editingTool === "new" ? undefined : editingTool}
               onSave={handleEditSave}
               onCancel={handleEditCancel}
+              onDelete={
+                editingTool !== "new" && editingTool
+                  ? () => handleDeleteTool(editingTool.id)
+                  : undefined
+              }
             />
           ) : (
             <>
@@ -108,6 +121,7 @@ function App() {
                   tool={selectedTool}
                   onBack={handleBack}
                   onEdit={() => setEditingTool(selectedTool)}
+                  onDelete={() => handleDeleteTool(selectedTool.id)}
                 />
               )}
             </>

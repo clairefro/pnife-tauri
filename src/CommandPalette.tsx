@@ -26,6 +26,7 @@ export interface Tool {
 
 export interface CommandPaletteHandle {
   focus: () => void;
+  reload: () => void;
 }
 
 const CommandPalette = forwardRef<
@@ -39,12 +40,16 @@ const CommandPalette = forwardRef<
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
+  const loadTools = () =>
+    invoke<Tool[]>("list_tools").then(setAllTools).catch(console.error);
+
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current?.focus(),
+    reload: loadTools,
   }));
 
   useEffect(() => {
-    invoke<Tool[]>("list_tools").then(setAllTools).catch(console.error);
+    loadTools();
   }, []);
 
   useEffect(() => {

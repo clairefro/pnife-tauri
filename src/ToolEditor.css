@@ -49,6 +49,73 @@
   border-color: var(--color-text-secondary);
 }
 
+.btn-delete {
+  padding: 0.3rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--color-error);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+  margin-right: auto;
+}
+
+.btn-delete:hover:not(:disabled) {
+  border-color: var(--color-error);
+  background: rgba(224, 92, 92, 0.08);
+}
+
+.btn-delete:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.confirm-label {
+  font-size: 0.8rem;
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.btn-confirm-delete {
+  background: var(--color-error);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.btn-confirm-delete:hover {
+  opacity: 0.85;
+}
+
+.btn-cancel-inline {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-bright);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.btn-cancel-inline:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-secondary);
+}
+
 .btn-save {
   padding: 0.3rem 0.85rem;
   font-size: 0.8rem;
