@@ -1,5 +1,5 @@
 use crate::provider_config::ProviderType;
-use crate::provider_manager::{load_all_providers, get_api_key, load_models};
+use crate::provider_manager::{load_all_providers, get_api_key};
 use flyllm::{create_instance, LlmRequest};
 use flyllm::providers::Message;
 use flyllm::providers::ProviderType as FlyType;
@@ -107,20 +107,10 @@ pub async fn run_prompt(
     })
 }
 
-/// Send a minimal probe prompt to verify the provider + model are reachable.
-/// Uses the provider's default model, falling back to the first configured model.
-pub async fn run_test(provider_id: &str) -> Result<TestResult, String> {
-    let models = load_models(provider_id)?;
-    let model = models
-        .iter()
-        .find(|m| m.is_default)
-        .or_else(|| models.first())
-        .ok_or("No models configured for this provider")?;
-
-    let model_id = model.id.clone();
-
+/// Send a minimal probe prompt to verify a specific provider + model are reachable.
+pub async fn run_test(provider_id: &str, model_id: &str) -> Result<TestResult, String> {
     let start = std::time::Instant::now();
-    match run_prompt(provider_id, &model_id, "Respond with exactly: ok", Some("You are a test. Reply with only the word ok.")).await {
+    match run_prompt(provider_id, model_id, "Respond with exactly: ok", Some("You are a test. Reply with only the word ok.")).await {
         Ok(resp) => Ok(TestResult {
             ok: true,
             model_id: resp.model,
@@ -129,7 +119,7 @@ pub async fn run_test(provider_id: &str) -> Result<TestResult, String> {
         }),
         Err(e) => Ok(TestResult {
             ok: false,
-            model_id,
+            model_id: model_id.to_string(),
             latency_ms: start.elapsed().as_millis() as u64,
             error: Some(e),
         }),

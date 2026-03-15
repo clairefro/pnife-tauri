@@ -194,6 +194,7 @@ export default function ProvidersPanel() {
     latency_ms: number;
     error?: string;
   }
+  // Keys are "providerId:modelId"
   const [testingConn, setTestingConn] = useState<Record<string, boolean>>({});
   const [connResults, setConnResults] = useState<Record<string, TestResult>>(
     {},
@@ -408,11 +409,12 @@ export default function ProvidersPanel() {
 
   // ── Test connection ────────────────────────────────────────────────────────
 
-  const handleTestConnection = async (providerId: string) => {
-    setTestingConn((prev) => ({ ...prev, [providerId]: true }));
+  const handleTestConnection = async (providerId: string, modelId: string) => {
+    const key = `${providerId}:${modelId}`;
+    setTestingConn((prev) => ({ ...prev, [key]: true }));
     setConnResults((prev) => {
       const next = { ...prev };
-      delete next[providerId];
+      delete next[key];
       return next;
     });
     try {
@@ -421,15 +423,36 @@ export default function ProvidersPanel() {
         model_id: string;
         latency_ms: number;
         error?: string;
-      }>("test_connection", { providerId });
-      setConnResults((prev) => ({ ...prev, [providerId]: result }));
+      }>("test_connection", { providerId, modelId });
+      setConnResults((prev) => ({ ...prev, [key]: result }));
+      setTimeout(
+        () =>
+          setConnResults((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          }),
+        3000,
+      );
     } catch (e) {
-      setConnResults((prev) => ({
-        ...prev,
-        [providerId]: { ok: false, model_id: "", latency_ms: 0, error: String(e) },
-      }));
+      const result = {
+        ok: false,
+        model_id: modelId,
+        latency_ms: 0,
+        error: String(e),
+      };
+      setConnResults((prev) => ({ ...prev, [key]: result }));
+      setTimeout(
+        () =>
+          setConnResults((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          }),
+        3000,
+      );
     } finally {
-      setTestingConn((prev) => ({ ...prev, [providerId]: false }));
+      setTestingConn((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -852,34 +875,6 @@ export default function ProvidersPanel() {
                         Delete
                       </button>
                     </div>
-
-                    <div className="card-test-row">
-                      <button
-                        className="btn-sm btn-test"
-                        disabled={
-                          testingConn[p.id] ||
-                          (models[p.id] ?? []).length === 0
-                        }
-                        title={
-                          (models[p.id] ?? []).length === 0
-                            ? "Add a model first"
-                            : "Send a test prompt"
-                        }
-                        onClick={() => handleTestConnection(p.id)}
-                      >
-                        {testingConn[p.id] ? "Testing…" : "Test"}
-                      </button>
-                      {connResults[p.id] && (
-                        <span
-                          className={`conn-result ${connResults[p.id].ok ? "conn-ok" : "conn-fail"}`}
-                          title={connResults[p.id].error ?? ""}
-                        >
-                          {connResults[p.id].ok
-                            ? `✓ ${connResults[p.id].latency_ms}ms`
-                            : `✗ ${connResults[p.id].error ?? "Failed"}`}
-                        </span>
-                      )}
-                    </div>
                   </>
                 )}
               </div>
@@ -915,6 +910,35 @@ export default function ProvidersPanel() {
                       <div className="model-info">
                         <span className="model-id">{m.id}</span>
                       </div>
+                      {(() => {
+                        const tkey = `${p.id}:${m.id}`;
+                        const result = connResults[tkey];
+                        return (
+                          <>
+                            {result && (
+                              <span
+                                className={`conn-result ${result.ok ? "conn-ok" : "conn-fail"}`}
+                                title={result.error ?? ""}
+                              >
+                                {result.ok
+                                  ? `✓ ${result.latency_ms}ms`
+                                  : `✗ ${result.error ?? "Failed"}`}
+                              </span>
+                            )}
+                            <button
+                              className="btn-sm btn-test"
+                              disabled={testingConn[tkey] ?? false}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTestConnection(p.id, m.id);
+                              }}
+                              title="Test this model"
+                            >
+                              {testingConn[tkey] ? "…" : "Test"}
+                            </button>
+                          </>
+                        );
+                      })()}
                       <button
                         className="btn-danger-sm"
                         onClick={(e) => {

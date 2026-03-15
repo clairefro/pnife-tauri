@@ -137,8 +137,8 @@ pub async fn ai_prompt(
     crate::ai_adapter::run_prompt(&provider_id, &model_id, &prompt, system_prompt.as_deref()).await
 }
 
-/// Send a minimal probe prompt to verify connectivity for a provider + model.
+/// Send a minimal probe prompt to verify connectivity for a specific provider + model.
 #[tauri::command]
-pub async fn test_connection(provider_id: String) -> Result<TestResult, String> {
-    crate::ai_adapter::run_test(&provider_id).await
+pub async fn test_connection(provider_id: String, model_id: String) -> Result<TestResult, String> {
+    crate::ai_adapter::run_test(&provider_id, &model_id).await
 }
