@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Tool } from "./CommandPalette";
+import ToolPipelineView, { StepResult } from "./ToolPipelineView";
 import "./ToolRunner.css";
 
 const SAMPLE_INPUT =
@@ -20,23 +21,51 @@ interface Props {
 
 export default function ToolRunner({ tool }: Props) {
   const [input, setInput] = useState(SAMPLE_INPUT);
-  const [output, setOutput] = useState("");
+  const [stepResults, setStepResults] = useState<(StepResult | null)[]>([]);
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [totalElapsedMs, setTotalElapsedMs] = useState<number | null>(null);
   const cancelledRef = useRef(false);
+
+  // Reset pipeline state when user switches to a different tool
+  useEffect(() => {
+    cancelledRef.current = true;
+    setRunning(false);
+    setStepResults([]);
+    setCurrentStep(null);
+    setTotalElapsedMs(null);
+    setError(null);
+  }, [tool.id]);
 
   const handleRun = async () => {
     cancelledRef.current = false;
     setRunning(true);
     setError(null);
-    setOutput("");
+    setStepResults(new Array(tool.steps.length).fill(null));
+    setCurrentStep(null);
+    setTotalElapsedMs(null);
+
+    const startTime = Date.now();
+    let current = input;
+
     try {
-      const result = await invoke<string>("run_tool", {
-        steps: tool.steps,
-        input,
-      });
-      if (!cancelledRef.current) {
-        setOutput(result);
+      for (let i = 0; i < tool.steps.length; i++) {
+        if (cancelledRef.current) break;
+        setCurrentStep(i);
+
+        const result = await invoke<StepResult>("run_tool_step", {
+          step: tool.steps[i],
+          input: current,
+        });
+
+        if (cancelledRef.current) break;
+        current = result.output;
+        setStepResults((prev) => {
+          const next = [...prev];
+          next[i] = result;
+          return next;
+        });
       }
     } catch (e) {
       if (!cancelledRef.current) {
@@ -44,6 +73,8 @@ export default function ToolRunner({ tool }: Props) {
       }
     } finally {
       if (!cancelledRef.current) {
+        setCurrentStep(null);
+        setTotalElapsedMs(Date.now() - startTime);
         setRunning(false);
       }
     }
@@ -52,6 +83,7 @@ export default function ToolRunner({ tool }: Props) {
   const handleStop = () => {
     cancelledRef.current = true;
     setRunning(false);
+    setCurrentStep(null);
     setError(null);
   };
 
@@ -90,13 +122,12 @@ export default function ToolRunner({ tool }: Props) {
         </div>
 
         <div className="tool-runner-pane">
-          <label className="pane-label">Output</label>
-          <textarea
-            className="tool-runner-textarea tool-runner-output"
-            value={output}
-            readOnly
-            placeholder={running ? "Running…" : "Output will appear here"}
-            spellCheck={false}
+          <label className="pane-label">Pipeline</label>
+          <ToolPipelineView
+            steps={tool.steps}
+            results={stepResults}
+            currentStep={currentStep}
+            totalElapsedMs={totalElapsedMs}
           />
         </div>
       </div>

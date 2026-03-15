@@ -1,0 +1,161 @@
+.pipeline-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.1rem 0;
+}
+
+/* ── Step card ─────────────────────────────────────────────────────── */
+.pipeline-step {
+  border-radius: 6px;
+  border: 1px solid #2a2d2e;
+  background: #1e2021;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.pipeline-step.running {
+  border-color: var(--color-accent, #569cd6);
+}
+
+.pipeline-step.done {
+  border-color: #3a4a3a;
+}
+
+/* ── Step header ───────────────────────────────────────────────────── */
+.pipeline-step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  min-width: 0;
+}
+
+.step-status {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  width: 1.2em;
+  text-align: center;
+  line-height: 1;
+}
+
+.step-status.done {
+  color: #98c379;
+}
+
+.step-status.running {
+  color: var(--color-accent, #569cd6);
+  animation: step-pulse 1s ease-in-out infinite;
+}
+
+.step-status.pending {
+  color: #444;
+}
+
+@keyframes step-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+.step-type-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-family: monospace;
+  background: #2a2d2e;
+  color: #777;
+  padding: 0.15em 0.45em;
+  border-radius: 3px;
+}
+
+.step-prompt-label {
+  font-size: 0.8rem;
+  color: #bbb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── Step body (output + meta) ─────────────────────────────────────── */
+.pipeline-step-body {
+  padding: 0.45rem 0.7rem 0.55rem;
+  border-top: 1px solid #2a2d2e;
+}
+
+.step-output-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.step-output {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 130px;
+  overflow-y: auto;
+  line-height: 1.55;
+}
+
+.step-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: #555;
+  font-family: monospace;
+}
+
+.step-running-pulse {
+  font-size: 0.8rem;
+  color: var(--color-accent, #569cd6);
+  animation: step-pulse 1s ease-in-out infinite;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #666;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0.2em 0.35em;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-top: 1px;
+}
+
+.copy-btn:hover {
+  color: #bbb;
+  border-color: #555;
+}
+
+.copy-btn.copied {
+  color: #98c379;
+  border-color: #98c379;
+}
+
+/* ── Summary footer ────────────────────────────────────────────────── */
+.pipeline-summary {
+  display: flex;
+  gap: 1.2rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  color: #666;
+  font-family: monospace;
+  border-top: 1px solid #2a2d2e;
+  margin-top: 0.1rem;
+}
+
+/* ── Empty state ───────────────────────────────────────────────────── */
+.pipeline-empty {
+  font-size: 0.82rem;
+  color: #555;
+  padding: 0.5rem 0.25rem;
+}

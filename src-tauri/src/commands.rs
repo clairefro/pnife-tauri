@@ -213,3 +213,52 @@ pub async fn run_tool(steps: Vec<ToolStep>, input: String) -> Result<String, Str
     }
     Ok(current)
 }
+
+#[derive(serde::Serialize)]
+pub struct StepResult {
+    pub output: String,
+    pub prompt_tokens: Option<u32>,
+    pub completion_tokens: Option<u32>,
+    pub total_tokens: Option<u32>,
+    pub latency_ms: u64,
+}
+
+/// Run a single pipeline step using the user's default provider + model.
+/// Called once per step by the frontend so it can show per-step progress.
+#[tauri::command]
+pub async fn run_tool_step(step: ToolStep, input: String) -> Result<StepResult, String> {
+    match step.r#type.as_str() {
+        "ai_prompt" | "prompt" => {
+            let default_sel = get_default_selection()?
+                .ok_or_else(|| "No default provider/model configured. Please set one in the Providers tab.".to_string())?;
+            let prompt_text = step.prompt.as_deref().unwrap_or("");
+            let full_prompt = format!("{}\n\n{}", prompt_text, input);
+            let res = crate::ai_adapter::run_prompt(
+                &default_sel.provider_id,
+                &default_sel.model_id,
+                &full_prompt,
+                None,
+            ).await?;
+            Ok(StepResult {
+                output: res.content,
+                prompt_tokens: res.prompt_tokens,
+                completion_tokens: res.completion_tokens,
+                total_tokens: res.total_tokens,
+                latency_ms: res.latency_ms,
+            })
+        }
+        "regex_replace" => {
+            let pattern = step.pattern.as_deref().ok_or("regex_replace step missing 'pattern'")?;
+            let replacement = step.replacement.as_deref().ok_or("regex_replace step missing 'replacement'")?;
+            let re = regex::Regex::new(pattern).map_err(|e| e.to_string())?;
+            Ok(StepResult {
+                output: re.replace_all(&input, replacement).to_string(),
+                prompt_tokens: None,
+                completion_tokens: None,
+                total_tokens: None,
+                latency_ms: 0,
+            })
+        }
+        other => Err(format!("Unknown step type: {}", other)),
+    }
+}

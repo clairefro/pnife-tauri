@@ -123,7 +123,8 @@ pub fn run() {
                 commands::ai_prompt,
                 commands::test_connection,
                 commands::run_tool,
-                commands::list_tools
+                commands::list_tools,
+                commands::run_tool_step
             ]
         )
         .run(tauri::generate_context!())
