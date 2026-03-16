@@ -55,11 +55,12 @@ export default function ToolRunner({ tool, onBack, onEdit, onDelete }: Props) {
       } else if (e.key === "Escape") {
         e.preventDefault();
         if (running) handleStop();
+        else onBack();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [running, input]);
+  }, [running, input, onBack]);
 
   const handleRun = async () => {
     cancelledRef.current = false;
